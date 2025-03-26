@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Objects;
@@ -83,7 +83,7 @@ public class UserController {
 
     @PostMapping("/check_exists_user")
     public ResponseEntity<Void> checkExistsUser(@RequestBody @Validated CheckExistsUserRequest checkExistsUserRequest) {
-        int count = userService.count(Wrappers.query(new User().setPhoneNum(checkExistsUserRequest.getPhoneNum())));
+        long count = userService.count(Wrappers.query(new User().setPhoneNum(checkExistsUserRequest.getPhoneNum())));
         if (count > 0) {
             return ResponseEntity.ok().build();
         }
@@ -92,7 +92,7 @@ public class UserController {
 
     @PostMapping("/check_exists_invite_code")
     public ResponseEntity<Void> checkExistsInviteCode(@RequestBody @Validated CheckExistsInviteCodeRequest checkExistsUserRequest) {
-        int count = userService.count(Wrappers.query(new User().setInviteCode(checkExistsUserRequest.getInviteCode())));
+        long count = userService.count(Wrappers.query(new User().setInviteCode(checkExistsUserRequest.getInviteCode())));
         if (count > 0) {
             return ResponseEntity.ok().build();
         }

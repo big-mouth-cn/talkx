@@ -112,7 +112,7 @@ public class UserInfoServiceImpl implements IUserInfoService {
         }
 
         QueryWrapper<User> queryWrapper = Wrappers.query(new User().setPhoneNum(newPhoneNum));
-        int newPhoneNumCount = userService.count(queryWrapper);
+        long newPhoneNumCount = userService.count(queryWrapper);
         if (newPhoneNumCount > 0) {
             throw new IllegalStateException("该手机号码已被使用");
         }

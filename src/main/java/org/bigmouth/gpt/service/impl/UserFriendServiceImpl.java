@@ -134,7 +134,7 @@ public class UserFriendServiceImpl extends ServiceImpl<UserFriendMapper, UserFri
             throw new IllegalArgumentException("不存在该好友");
         }
 
-        int count = deviceService.count(Wrappers.query(new Device().setUserFriendId(userFriend.getId())));
+        long count = deviceService.count(Wrappers.query(new Device().setUserFriendId(userFriend.getId())));
         if (count > 0) {
             throw new IllegalArgumentException("存在 " + count + " 智体设备绑定，请先解绑后再试。");
         }

@@ -41,7 +41,7 @@ public class PromptConfigServiceImpl extends ServiceImpl<PromptConfigMapper, Pro
     @Override
     public String createRoleType() {
         String roleType = "r-" + RandomStringUtils.randomAlphabetic(10);
-        int count = count(Wrappers.query(new PromptConfig().setRoleType(roleType)));
+        long count = count(Wrappers.query(new PromptConfig().setRoleType(roleType)));
         if (count != 0) {
             return createRoleType();
         }

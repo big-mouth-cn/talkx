@@ -114,12 +114,11 @@ public class TalkXMqttFrontEndClient implements DisposableBean {
 
     public void connect() {
         try {
-            String macAddress = getMacAddress();
             String clientId = getClientId();
-            ForwardConnectRequest forwardConnectRequest = new ForwardConnectRequest();
-            forwardConnectRequest.setMacAddress(macAddress);
-            forwardConnectRequest.setClientId(clientId);
-            ForwardConnectResponse forwardConnectResponse = talkXApi.forwardConnect(forwardConnectRequest);
+            ForwardConnectResponse forwardConnectResponse = fetchForwardConnectResponse(clientId);
+            if (forwardConnectResponse == null) {
+                return;
+            }
             mqttClient = new MqttAsyncClient(forwardConnectResponse.getServerUrl(), clientId, new MemoryPersistence());
 
             MqttConnectionOptions connOpts = new MqttConnectionOptions();
@@ -190,6 +189,20 @@ public class TalkXMqttFrontEndClient implements DisposableBean {
         } catch (MqttException e) {
             log.error("MQTT connect failed", e);
             scheduleReconnect();
+        }
+    }
+
+    private ForwardConnectResponse fetchForwardConnectResponse(String clientId) {
+        try {
+            String macAddress = getMacAddress();
+            ForwardConnectRequest forwardConnectRequest = new ForwardConnectRequest();
+            forwardConnectRequest.setMacAddress(macAddress);
+            forwardConnectRequest.setClientId(clientId);
+            return talkXApi.forwardConnect(forwardConnectRequest);
+        } catch (Exception e) {
+            log.error("Connect TalkX Center Server fail! {}", e.getMessage());
+            System.exit(-1);
+            return null;
         }
     }
 

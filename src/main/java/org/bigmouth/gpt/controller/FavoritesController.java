@@ -57,7 +57,7 @@ public class FavoritesController {
         if (!Objects.equals(session.getUserId(), userId)) {
             return ResponseEntity.ok().build();
         }
-        int count = favoritesService.count(Wrappers.query(new Favorites().setUserId(userId).setSessionMessageId(messageId)));
+        long count = favoritesService.count(Wrappers.query(new Favorites().setUserId(userId).setSessionMessageId(messageId)));
         if (count > 0) {
             return ResponseEntity.ok().build();
         }

@@ -11,13 +11,14 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.5</version>
+        <version>3.4.2</version>
         <relativePath />
     </parent>
 
     <properties>
-        <mysql_version>8.0.22</mysql_version>
-        <mybatis_plus_version>3.4.0</mybatis_plus_version>
+        <mysql_version>8.0.33</mysql_version>
+        <mybatis_plus_version>3.5.11</mybatis_plus_version>
+        <mybatis_plus_dynamic_version>4.3.1</mybatis_plus_dynamic_version>
         <mapstruct_version>1.4.2.Final</mapstruct_version>
         <openai4j_version>0.22.91</openai4j_version>
     </properties>
@@ -27,7 +28,21 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>2.5.5</version>
+                <version>3.4.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.0.0-M6</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis_plus_version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -45,16 +60,17 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
         </dependency>
         <dependency>
             <groupId>com.knuddels</groupId>
@@ -68,7 +84,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>21.0</version>
+            <version>33.4.5-jre</version>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
@@ -79,18 +95,20 @@
         <!-- about database -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>${mybatis_plus_version}</version>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
-            <version>${mybatis_plus_version}</version>
+            <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
+            <version>${mybatis_plus_dynamic_version}</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql_version}</version>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.xerial</groupId>
@@ -111,22 +129,11 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>1.2.15</version>
+            <version>1.2.24</version>
         </dependency>
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-        </dependency>
-
-        <!-- validator -->
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-validator</artifactId>
-            <version>5.4.1.Final</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.java-websocket/Java-WebSocket -->
@@ -268,7 +275,7 @@
         <!-- forest -->
         <dependency>
             <groupId>com.dtflys.forest</groupId>
-            <artifactId>forest-spring-boot-starter</artifactId>
+            <artifactId>forest-spring-boot3-starter</artifactId>
             <version>1.6.4</version>
         </dependency>
     </dependencies>

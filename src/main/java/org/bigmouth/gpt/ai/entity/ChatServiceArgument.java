@@ -13,7 +13,7 @@ import org.bigmouth.gpt.entity.ChatRequest;
 import org.bigmouth.gpt.entity.Prompt;
 import org.bigmouth.gpt.entity.User;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;

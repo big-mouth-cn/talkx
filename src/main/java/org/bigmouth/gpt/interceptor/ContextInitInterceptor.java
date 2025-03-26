@@ -1,6 +1,8 @@
 package org.bigmouth.gpt.interceptor;
 
 import com.bxm.warcar.utils.IpHelper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.bigmouth.gpt.entity.User;
 import org.bigmouth.gpt.service.IUserService;
 import org.bigmouth.gpt.utils.UserTokenUtils;
@@ -9,8 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;
 
 /**

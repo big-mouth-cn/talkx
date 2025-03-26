@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 @ConditionalOnProperty(name = "config.enable-redis-cache", havingValue = "true")
@@ -25,26 +26,37 @@ public class JedisAutoConfiguration {
         this.configuration = configuration;
     }
 
-    @Bean
-    public JedisPool jedisPool() {
-        return new JedisPool(configuration, configuration.getHost(), configuration.getPort(), configuration.getTimeout(), configuration.getPassword(), configuration.getDatabase());
+    public static JedisPool createJedisPool(JedisConfiguration configuration) {
+        // If you register JedisPoolConfig or some other class extends BaseGenericObjectPool
+        // or it's subclass GenericObjectPoolConfig ( which in apache commons pool ) instances to spring .
+        // this problem will happen 。becase the same instance registered to jmx twice .
+        // https://github.com/redis/jedis/issues/2781#issuecomment-1092744636
+        JedisPoolConfig config = new JedisPoolConfig();
+        config.setMaxWait(configuration.getMaxWaitTime());
+        config.setMinEvictableIdleDuration(configuration.getMinEvictableIdleTime());
+        config.setSoftMinEvictableIdleDuration(configuration.getSoftMinEvictableIdleTime());
+        config.setJmxNamePrefix("jedis-general-pool-");
+        return new JedisPool(config, configuration.getHost(), configuration.getPort(), configuration.getTimeout(), configuration.getPassword(), configuration.getDatabase());
     }
 
     @Bean
     @Primary
-    public Fetcher jedisFetcher(JedisPool jedisPool) {
+    public Fetcher jedisFetcher() {
+        JedisPool jedisPool = createJedisPool(configuration);
         return new JedisFetcher(jedisPool);
     }
 
     @Bean
     @Primary
-    public Updater jedisUpdater(JedisPool jedisPool) {
+    public Updater jedisUpdater() {
+        JedisPool jedisPool = createJedisPool(configuration);
         return new JedisUpdater(jedisPool);
     }
 
     @Bean
     @Primary
-    public Counter jedisCounter(JedisPool jedisPool) {
+    public Counter jedisCounter() {
+        JedisPool jedisPool = createJedisPool(configuration);
         return new JedisCounter(jedisPool);
     }
 }

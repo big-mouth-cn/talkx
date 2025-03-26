@@ -7,9 +7,9 @@ import com.alibaba.mqtt.server.config.ChannelConfig;
 import com.alibaba.mqtt.server.config.ProducerConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.bigmouth.gpt.xiaozhi.config.XiaozhiMqttConfig;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
  * @date 2025/2/21
  */
 @Slf4j
-public class MqttCloudProducer {
+public class MqttCloudProducer implements InitializingBean, DisposableBean {
 
     private final ServerProducer serverProducer;
 
@@ -59,7 +59,11 @@ public class MqttCloudProducer {
         }
     }
 
-    @PostConstruct
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.init();
+    }
+
     public void init() {
         try {
             this.serverProducer.start();
@@ -70,7 +74,7 @@ public class MqttCloudProducer {
         }
     }
 
-    @PreDestroy
+    @Override
     public void destroy() {
         try {
             this.serverProducer.stop();
