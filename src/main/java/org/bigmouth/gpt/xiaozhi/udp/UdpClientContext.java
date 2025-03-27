@@ -163,7 +163,7 @@ public class UdpClientContext {
                     List<byte[]> ttsDataOpus = ttsData.getOpus();
                     for (byte[] opus : ttsDataOpus) {
                         audioResponseSender.accept(opus);
-                        sleepInMillis(opusEncoderUtils.getFrameSizeMs() - 1);
+                        sleepInMillis(opusEncoderUtils.getFrameSizeMs());
                     }
                 } else {
                     // 如果TTS已经结束，则退出循环
@@ -224,6 +224,7 @@ public class UdpClientContext {
         if (!compareAndSet(State.Goodbye, State.Goodbye)) {
             set(State.Goodbye);
             audioPackets.clear();
+            audioBuffer.destroy();
             opusEncoderUtils.close();
             opusDecoderUtils.close();
             this.stopVADListener();

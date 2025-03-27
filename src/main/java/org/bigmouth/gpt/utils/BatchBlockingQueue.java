@@ -26,7 +26,7 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
     private final BlockingQueue<T> queue = new LinkedBlockingQueue<>();
     private final AtomicLong startTime = new AtomicLong(System.currentTimeMillis());
 
-    private final ExecutorService purgeThread = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+    private final ThreadPoolExecutor purgeThread = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
             new LinkedBlockingQueue<>(), new NamedThreadFactory("purge"));
 
     public BatchBlockingQueue(int batchSize, Consumer<List<T>> consumer) {
@@ -54,7 +54,12 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
     }
 
     private void startDrain() {
-        purgeThread.submit((Runnable) () -> {
+        boolean shutdown = purgeThread.isShutdown();
+        boolean terminated = purgeThread.isTerminated();
+        if (shutdown || terminated) {
+            return;
+        }
+        purgeThread.submit(() -> {
             startTime.set(System.currentTimeMillis());
 
             for ( ;; ) {
@@ -92,5 +97,10 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
             consumer.accept(drained);
             startTime.set(System.currentTimeMillis());
         }
+    }
+
+    public void destroy() {
+        this.clear();
+        this.purgeThread.shutdownNow();
     }
 }

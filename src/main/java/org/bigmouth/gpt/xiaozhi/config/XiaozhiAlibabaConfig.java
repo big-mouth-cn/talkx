@@ -14,4 +14,7 @@ public class XiaozhiAlibabaConfig {
     private String dashscopeApiKey = "";
     private String cosyVoiceDefaultModel = "cosyvoice-v2";
     private String cosyVoiceDefaultVoice = "longxiaoxia_v2";
+    private int cosyVoicePoolMaxTotal = 500;
+    private int cosyVoicePoolMaxIdle = 100;
+    private int cosyVoicePoolMinIdle = 10;
 }

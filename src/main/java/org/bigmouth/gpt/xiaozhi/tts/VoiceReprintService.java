@@ -4,7 +4,6 @@ public interface VoiceReprintService {
 
     TtsPlatformType of();
 
-    @Deprecated
     String reprint(String voiceSrcUrl, String modelNamePrefix);
 
     VoiceReprintResult reprint(VoiceReprintRequest request);

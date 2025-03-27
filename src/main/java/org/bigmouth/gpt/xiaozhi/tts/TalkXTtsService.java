@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.apache.commons.io.IOUtils;
 import org.bigmouth.gpt.xiaozhi.config.XiaozhiTalkXConfig;
+import org.bigmouth.gpt.xiaozhi.forest.TalkXApi;
+import org.bigmouth.gpt.xiaozhi.forest.TtsRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -23,23 +25,12 @@ import java.util.function.Consumer;
 @Slf4j
 public class TalkXTtsService implements TtsService {
 
-    private final String talkxCenterBaseUrl;
-    private final OkHttpClient okHttpClient = create();
-    private final XiaozhiTalkXConfig xiaozhiTalkXConfig;
     private final TalkXTtsService.TtsConfig ttsConfig;
+    private final TalkXApi talkXApi;
 
-    public TalkXTtsService(String talkxCenterBaseUrl, XiaozhiTalkXConfig xiaozhiTalkXConfig, TtsConfig ttsConfig) {
-        this.talkxCenterBaseUrl = talkxCenterBaseUrl;
-        this.xiaozhiTalkXConfig = xiaozhiTalkXConfig;
+    public TalkXTtsService(TtsConfig ttsConfig, TalkXApi talkXApi) {
         this.ttsConfig = ttsConfig;
-    }
-
-    private OkHttpClient create() {
-        return new OkHttpClient.Builder()
-                .connectionPool(new ConnectionPool(100, 10, TimeUnit.MINUTES))
-                .connectTimeout(Duration.ofSeconds(3))
-                .readTimeout(Duration.ofMinutes(10))
-                .build();
+        this.talkXApi = talkXApi;
     }
 
     @Override
@@ -49,33 +40,14 @@ public class TalkXTtsService implements TtsService {
 
     @Override
     public void stream(String text, Consumer<byte[]> frameHandler) {
-        Response response = null;
-        try {
-            ttsConfig.setText(text);
-
-            String url = UriComponentsBuilder.fromUriString(talkxCenterBaseUrl)
-                    .path("/xiaozhi/tts_sse")
-                    .build()
-                    .toString();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(RequestBody.create(JsonHelper.convert(ttsConfig), MediaType.get("application/json")))
-                    .build();
-            response = okHttpClient.newCall(request).execute();
-            if (response.isSuccessful() && response.body() != null) {
-                InputStream inputStream = response.body().byteStream();
-                byte[] buffer = new byte[xiaozhiTalkXConfig.getTtsStreamBufferSize()];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    byte[] validData = Arrays.copyOfRange(buffer, 0, bytesRead);
-                    frameHandler.accept(validData);
-                }
-            }
-        } catch (IOException e) {
-            log.error("Error occurred while processing the request: " + e.getMessage());
-        } finally {
-            IOUtils.closeQuietly(response);
-        }
+        TtsRequest ttsRequest = new TtsRequest()
+                .setSessionId(ttsConfig.getSessionId())
+                .setTtsPlatformType(ttsConfig.getTtsPlatformType())
+                .setVoiceModel(ttsConfig.getVoiceModel())
+                .setVoiceRole(ttsConfig.getVoiceRole())
+                .setText(text);
+        byte[] pcmBytes = talkXApi.tts(ttsRequest);
+        frameHandler.accept(pcmBytes);
     }
 
     @Override
