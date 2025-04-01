@@ -33,8 +33,8 @@ public class GoodbyeMessageHandler implements MessageHandler {
     public DataPacket handle(DataPacket dataPacket) {
         String sessionId = dataPacket.getSessionId();
         try {
-            log.info("{} goodbye", sessionId);
             udpClientContextHolder.goodbye(sessionId);
+            log.info("[{}] - Goodbye!!", sessionId);
         } catch (Exception e) {
             log.error("{} goodbye error: ", sessionId, e);
         }

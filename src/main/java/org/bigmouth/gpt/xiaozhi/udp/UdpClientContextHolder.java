@@ -6,6 +6,9 @@ import com.bxm.warcar.cache.KeyGenerator;
 import com.bxm.warcar.cache.Updater;
 import com.bxm.warcar.integration.eventbus.EventPark;
 import com.bxm.warcar.utils.KeyBuilder;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.bigmouth.gpt.entity.Session;
@@ -19,10 +22,8 @@ import org.springframework.context.annotation.Configuration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
 /**
@@ -41,6 +42,15 @@ public class UdpClientContextHolder implements DisposableBean {
     private final ISessionService sessionService;
     private final ScheduledThreadPoolExecutor nonLocalGoodbyeScheduled = new ScheduledThreadPoolExecutor(1);
     private final ScheduledThreadPoolExecutor listenTimeOutScheduled = new ScheduledThreadPoolExecutor(1);
+    private final LoadingCache<String, Optional<Integer>> goodbyeCache = CacheBuilder.newBuilder()
+            .initialCapacity(200)
+            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .build(new CacheLoader<String, Optional<Integer>>() {
+                @Override
+                public Optional<Integer> load(String key) {
+                    return Optional.empty();
+                }
+            });
 
     public UdpClientContextHolder(Fetcher fetcher, Updater updater, ISessionService sessionService, EventPark eventPark) {
         this.fetcher = fetcher;
@@ -90,7 +100,7 @@ public class UdpClientContextHolder implements DisposableBean {
                             String sessionId = context.getSessionId();
                             DataPacket dataPacket = DataPacket.builder().type(MessageType.GOODBYE.getValue()).sessionId(sessionId).build();
                             eventPark.post(new P2pMessageEvent(this, context, dataPacket));
-                            log.info("{} Listen manual timeout, Say goodbye!", sessionId);
+                            log.info("[{}] Listen manual timeout, Say goodbye!", sessionId);
                             goodbye(sessionId);
                         }
                     } catch (Exception e) {
@@ -111,11 +121,22 @@ public class UdpClientContextHolder implements DisposableBean {
     }
 
     public void goodbye(String sessionId) {
+        this.goodbyeCache.cleanUp();
+        this.goodbyeCache.put(sessionId, Optional.of(1));
         // 这样做，是因为在集群环境下，goodbye的消息只会被任意一个节点消费到，
         // 所以需要把goodbye消息放入redis的list中，让所有节点都能收到goodbye消息
         boolean exists = this.destroyContextIfExists(sessionId);
         if (!exists) {
             this.putGoodbye(sessionId);
+        }
+    }
+
+    public boolean isGoodbye(String sessionId) {
+        try {
+            Optional<Integer> exists = this.goodbyeCache.get(sessionId);
+            return exists.isPresent();
+        } catch (ExecutionException ignored) {
+            return false;
         }
     }
 

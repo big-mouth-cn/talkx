@@ -144,7 +144,7 @@ public class TalkXMqttFrontEndClient implements DisposableBean {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
                     String json = new String(message.getPayload());
-                    log.info("Receive MQTT message, topic: {}, payload: {}", topic, json);
+                    log.debug("Receive MQTT message, topic: {}, payload: {}", topic, json);
 
                     DataPacket dataPacket = JSONObject.parseObject(json, DataPacket.class);
                     MessageType messageType = dataPacket.of();
@@ -230,7 +230,7 @@ public class TalkXMqttFrontEndClient implements DisposableBean {
                 MqttMessage mqttMessage = new MqttMessage(JsonHelper.convert2bytes(message));
                 mqttMessage.setQos(QOS);
                 mqttClient.publish(topic, mqttMessage);
-                log.info("MQTT message send success, topic: {}, payload: {}", topic, message);
+                log.debug("MQTT message send success, topic: {}, payload: {}", topic, message);
             } else {
                 log.warn("MQTT not connected, send fail. topic: {}, payload: {}", topic, message);
             }

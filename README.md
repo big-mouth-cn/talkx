@@ -217,5 +217,9 @@ TalkX 相关配置，包括语言模型、音色、声音复刻等。
 将数据库连接 `?` 后面修改成：`?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai`
 
 
+- **开源版本有新版本需要如何升级？**  
+一般情况，只需要下载新版本并解压，将上个版本的配置文件复制到新版本的`conf`目录下，然后运行`start.bat` 或 `start.sh`即可。
+
+
 - **更多问题**  
 可以加QQ群交流：953272742

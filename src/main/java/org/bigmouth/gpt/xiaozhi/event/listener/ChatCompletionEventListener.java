@@ -120,7 +120,7 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
                             // 发送 TTS | stop 请求
                             DataPacket ttsStop = DataPacket.builder().type(MessageType.TTS.getValue()).state(DataPacket.STATE_STOP).sessionId(sessionId).build();
                             eventPark.post(new P2pMessageEvent(this, context, ttsStop));
-                            log.info("doSpeakingEnd: {}", endEntity.getSessionId());
+                            log.info("[{}] - Speak completed.", endEntity.getSessionId());
 
                             // 发送对话完全完成事件
                             eventPark.post(new ChatCompletionEndEvent(this, udpHello));
@@ -427,7 +427,7 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
         try {
             String sessionId = context.getSessionId();
             AtomicBoolean isFirst = new AtomicBoolean(true);
-            log.info("{} TTS >> {}", sessionId, segment);
+            log.info("[{}] TTS >> {}", sessionId, segment);
             context.getTtsService().stream(segment, pcmBytes -> {
                 try {
                     List<byte[]> opus = this.sendAudioDataWithEncrypted(pcmBytes, false, context);

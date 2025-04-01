@@ -44,6 +44,11 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
     }
 
     @Override
+    public Consumer<List<T>> getConsumer() {
+        return this.consumer;
+    }
+
+    @Override
     public boolean add(T t) {
         boolean b = queue.add(t);
         if (!isProcessing() && b) {
@@ -51,6 +56,11 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
             startDrain();
         }
         return b;
+    }
+
+    @Override
+    public void asyncAdd(T t) {
+        this.add(t);
     }
 
     private void startDrain() {
@@ -99,6 +109,7 @@ public class BatchBlockingQueue<T> implements BatchQueue<T> {
         }
     }
 
+    @Override
     public void destroy() {
         this.clear();
         this.purgeThread.shutdownNow();

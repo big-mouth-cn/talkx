@@ -8,7 +8,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.bigmouth.gpt.utils.BatchBlockingQueue;
+import org.bigmouth.gpt.utils.BatchQueue;
 import org.bigmouth.gpt.xiaozhi.audio.AudioCodec;
 import org.bigmouth.gpt.xiaozhi.audio.AudioPacket;
 import org.bigmouth.gpt.xiaozhi.entity.DataPacket;
@@ -35,15 +35,15 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
     private final HelloMessageHandler helloMessageHandler;
     private final ListenMessageHolder listenMessageHolder;
     private final UdpClientContextBuilder udpClientContextBuilder;
-    private final EventPark eventPark;
+    private final UdpClientContextHolder udpClientContextHolder;
     private final ClientAddressHolder clientAddressHolder;
     private NettyUDPServer nettyUDPServer;
 
-    public NettyChannelInboundHandler(HelloMessageHandler helloMessageHandler, ListenMessageHolder listenMessageHolder, UdpClientContextBuilder udpClientContextBuilder, EventPark eventPark, ClientAddressHolder clientAddressHolder) {
+    public NettyChannelInboundHandler(HelloMessageHandler helloMessageHandler, ListenMessageHolder listenMessageHolder, UdpClientContextBuilder udpClientContextBuilder, UdpClientContextHolder udpClientContextHolder, ClientAddressHolder clientAddressHolder) {
         this.helloMessageHandler = helloMessageHandler;
         this.listenMessageHolder = listenMessageHolder;
         this.udpClientContextBuilder = udpClientContextBuilder;
-        this.eventPark = eventPark;
+        this.udpClientContextHolder = udpClientContextHolder;
         this.clientAddressHolder = clientAddressHolder;
     }
 
@@ -77,6 +77,11 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
             }
 
             String sessionId = udpHello.getSessionId();
+            // 当服务端主动发出 GOODBYE，网络层可能还有数据流进来，防止无效的资源创建，这里做了判断。
+            if (udpClientContextHolder.isGoodbye(sessionId)) {
+                return;
+            }
+
             // 保存客户端地址
             ClientAddress clientAddress = new ClientAddress().setIp(sender.getAddress().getHostAddress()).setPort(sender.getPort());
             clientAddressHolder.save(sessionId, clientAddress);
@@ -113,10 +118,8 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
                 // 只有当auto模式下才需要 VAD 处理。
                 if (listenDataPacket.isModeAuto()) {
                     // 将 pcm 数据存储到队列里，进行 VAD 处理。
-                    BatchBlockingQueue<Byte> audioBuffer = context.getAudioBuffer();
-                    for (byte b : pcm) {
-                        audioBuffer.add(b);
-                    }
+                    BatchQueue<byte[]> audioBuffer = context.getAudioBuffer();
+                    audioBuffer.asyncAdd(pcm);
                 }
             }
         } catch (Exception e) {

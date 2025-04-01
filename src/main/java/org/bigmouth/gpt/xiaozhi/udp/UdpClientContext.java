@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bigmouth.gpt.entity.Session;
 import org.bigmouth.gpt.entity.UserFriend;
 import org.bigmouth.gpt.entity.UserFriendMediaConfig;
-import org.bigmouth.gpt.utils.BatchBlockingQueue;
+import org.bigmouth.gpt.utils.BatchQueue;
 import org.bigmouth.gpt.xiaozhi.audio.AudioPacket;
 import org.bigmouth.gpt.xiaozhi.audio.OpusDecoderUtils;
 import org.bigmouth.gpt.xiaozhi.audio.OpusEncoderUtils;
@@ -46,7 +46,7 @@ public class UdpClientContext {
     private final List<AudioPacket> audioPackets;
     private final OpusEncoderUtils opusEncoderUtils;
     private final OpusDecoderUtils opusDecoderUtils;
-    private final BatchBlockingQueue<Byte> audioBuffer;
+    private final BatchQueue<byte[]> audioBuffer;
     private final AtomicReference<State> state;
     private final SileroVadListener sileroVadListener;
     private final AudioResponseSequence audioResponseSequence;
@@ -89,7 +89,7 @@ public class UdpClientContext {
 
 
     public UdpClientContext(UdpHello udpHello, EventPark eventPark, List<AudioPacket> audioPackets, OpusEncoderUtils opusEncoderUtils,
-                            OpusDecoderUtils opusDecoderUtils, BatchBlockingQueue<Byte> audioBuffer,
+                            OpusDecoderUtils opusDecoderUtils, BatchQueue<byte[]> audioBuffer,
                             AtomicReference<State> state, SileroVadListener sileroVadListener,
                             AudioResponseSequence audioResponseSequence,
                             TtsService ttsService, Session session, UserFriend userFriend, UserFriendMediaConfig userFriendMediaConfig) {
@@ -220,7 +220,7 @@ public class UdpClientContext {
     /**
      * 释放资源
      */
-    public void destroy() {
+    void destroy() {
         if (!compareAndSet(State.Goodbye, State.Goodbye)) {
             set(State.Goodbye);
             audioPackets.clear();
@@ -298,8 +298,7 @@ public class UdpClientContext {
         private List<AudioPacket> audioPacketList = new ArrayList<>(512);
         private OpusEncoderUtils encoderUtils;
         private OpusDecoderUtils decoderUtils;
-        private AudioBufferConsumer audioBufferConsumer;
-        private BatchBlockingQueue<Byte> audioBufferQueue;
+        private BatchQueue<byte[]> audioBufferQueue;
         private SileroVadListener sileroVadListener;
         private TtsService ttsService;
         private Session session;
@@ -329,9 +328,8 @@ public class UdpClientContext {
             return this;
         }
 
-        public Builder audioBufferQueue(int batchSize, AudioBufferConsumer audioBufferConsumer) {
-            this.audioBufferQueue = new BatchBlockingQueue<>(batchSize, audioBufferConsumer);
-            this.audioBufferConsumer = audioBufferConsumer;
+        public Builder audioBufferQueue(BatchQueue<byte[]> batchQueue) {
+            this.audioBufferQueue = batchQueue;
             return this;
         }
 
@@ -377,7 +375,10 @@ public class UdpClientContext {
         public UdpClientContext build() {
             UdpClientContext context = new UdpClientContext(udpHello, eventPark, audioPacketList, encoderUtils, decoderUtils, audioBufferQueue, empty,
                     sileroVadListener, audioResponseSequence, ttsService, session, userFriend, userFriendMediaConfig);
-            audioBufferConsumer.setContext(context);
+            Consumer<List<byte[]>> consumer = audioBufferQueue.getConsumer();
+            if (consumer instanceof AudioBufferConsumer) {
+                ((AudioBufferConsumer) consumer).setContext(context);
+            }
             return context;
         }
     }

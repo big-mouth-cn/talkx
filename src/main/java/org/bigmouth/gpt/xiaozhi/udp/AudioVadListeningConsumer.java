@@ -26,12 +26,14 @@ public class AudioVadListeningConsumer implements AudioBufferConsumer {
     private final XiaozhiSileroConfig xiaozhiSileroConfig;
     private final EventPark eventPark;
     private final UdpHello udpHello;
+    private final UdpClientContextHolder udpClientContextHolder;
     private UdpClientContext context;
 
-    public AudioVadListeningConsumer(XiaozhiSileroConfig xiaozhiSileroConfig, EventPark eventPark, UdpHello udpHello) {
+    public AudioVadListeningConsumer(XiaozhiSileroConfig xiaozhiSileroConfig, EventPark eventPark, UdpHello udpHello, UdpClientContextHolder udpClientContextHolder) {
         this.xiaozhiSileroConfig = xiaozhiSileroConfig;
         this.eventPark = eventPark;
         this.udpHello = udpHello;
+        this.udpClientContextHolder = udpClientContextHolder;
     }
 
     @Override
@@ -40,9 +42,9 @@ public class AudioVadListeningConsumer implements AudioBufferConsumer {
     }
 
     @Override
-    public void accept(List<Byte> bytes) {
+    public void accept(List<byte[]> bytes) {
         try {
-            if (context.getState().get() == UdpClientContext.State.Goodbye) {
+            if (null == context || context.getState().get() == UdpClientContext.State.Goodbye) {
                 return;
             }
 
@@ -62,22 +64,28 @@ public class AudioVadListeningConsumer implements AudioBufferConsumer {
 
             // 只有当开始监听才处理数据。
             if (context.getState().get() == UdpClientContext.State.Listening) {
-                byte[] cpm = new byte[bytes.size()];
-                for (int i = 0; i < bytes.size(); i++) {
-                    cpm[i] = bytes.get(i);
-                }
+                byte[] cpm = UdpClientContext.mergeByteArrays(bytes);
+                int totalLength = cpm.length;
+                int offset = 0;
+                while (offset < totalLength) {
+                    int chunkLength = Math.min(1024, totalLength - offset);
+                    byte[] chunk = new byte[chunkLength];
+                    System.arraycopy(cpm, offset, chunk, 0, chunkLength);
+                    offset += chunkLength;
 
-                Map<String, Double> result = context.getSileroVadListener().listen(cpm);
-                if (MapUtils.isNotEmpty(result)) {
-                    log.info("{} - 检测到语音活动事件。{}", result, udpHello);
-                    boolean isStart = result.containsKey("start");
-                    if (isStart) {
-                        eventPark.post(new VadStartEvent(result, context));
-                    }
-                    boolean isEnd = result.containsKey("end");
-                    if (isEnd) {
-                        context.set(UdpClientContext.State.ListenEnd);
-                        eventPark.post(new VadEndEvent(result, context));
+                    Map<String, Double> result = context.getSileroVadListener().listen(chunk);
+                    if (MapUtils.isNotEmpty(result)) {
+                        log.info("[{}] - VAD event: {}", context.getSessionId(), result);
+                        boolean isStart = result.containsKey("start");
+                        if (isStart) {
+                            eventPark.post(new VadStartEvent(result, context));
+                        }
+                        boolean isEnd = result.containsKey("end");
+                        if (isEnd) {
+                            context.set(UdpClientContext.State.ListenEnd);
+                            eventPark.post(new VadEndEvent(result, context));
+                            break;
+                        }
                     }
                 }
 
@@ -86,10 +94,10 @@ public class AudioVadListeningConsumer implements AudioBufferConsumer {
                     String sessionId = udpHello.getSessionId();
                     DataPacket dataPacket = DataPacket.builder().type(MessageType.GOODBYE.getValue()).sessionId(sessionId).build();
                     eventPark.post(new P2pMessageEvent(this, context, dataPacket));
-                    log.info("{} VAD listen timeout, Say goodbye!", sessionId);
+                    log.info("[{}] VAD listen timeout.", sessionId);
 
                     // 主动设置状态为 Goodbye
-                    context.destroy();
+                    udpClientContextHolder.goodbye(sessionId);
                 }
             }
         } catch (Exception e) {

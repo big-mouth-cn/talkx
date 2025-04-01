@@ -41,7 +41,7 @@ public class VadEndSpeech2TextEventListener implements EventListener<VadEndEvent
         UdpHello udpHello = context.getUdpHello();
         try {
             byte[] pcm = context.getPcmAudioBytes();
-            log.info("{} - Start transcription.", sessionId);
+            log.info("[{}] - Start transcription.", sessionId);
             byte[] wav = PcmToWavUtil.pcmToWav(pcm);
             String text = asrServiceFactory.get().asr(System.currentTimeMillis() + ".wav", wav);
 
@@ -49,11 +49,11 @@ public class VadEndSpeech2TextEventListener implements EventListener<VadEndEvent
             if (StringUtils.isBlank(text)) {
                 String listenMode = listenMessageHolder.getListenMode(sessionId);
                 if (DataPacket.MODE_MANUAL.equals(listenMode)) {
-                    log.info("{} - No speak any content", sessionId);
+                    log.info("[{}] - No speak any content", sessionId);
                     return;
                 }
             }
-            log.info("{} - Say: {}", sessionId, text);
+            log.info("[{}] - Say: {}", sessionId, text);
 
             // 发送 STT 数据
             DataPacket stt = DataPacket.builder().type(MessageType.STT.getValue()).text(text).sessionId(sessionId).build();
@@ -62,7 +62,7 @@ public class VadEndSpeech2TextEventListener implements EventListener<VadEndEvent
             // 发送 STT 事件
             eventPark.post(new Speech2TextSuccessEvent(this, context, udpHello, text));
         } catch (Exception e) {
-            log.error("{} - Voice transcription failed.", sessionId, e);
+            log.error("[{}] - Voice transcription failed.", sessionId, e);
 
             // 发送 GOODBYE 请求
             DataPacket goodbye = DataPacket.builder().type(MessageType.GOODBYE.getValue()).text("-102").sessionId(sessionId).build();
