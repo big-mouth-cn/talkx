@@ -23,7 +23,7 @@ public class ListenMessageHolder {
         return fetcher.fetch(stringListenStart(sessionId), DataPacket.class);
     }
 
-    public void save(String sessionId, DataPacket listen) {
+    public void saveListenDataPacket(String sessionId, DataPacket listen) {
         updater.update(stringListenStart(sessionId), listen, 30 * 60);
     }
 
@@ -31,7 +31,7 @@ public class ListenMessageHolder {
         return fetcher.fetch(stringListenMode(sessionId), String.class);
     }
 
-    public void save(String sessionId, String mode) {
+    public void saveListenMode(String sessionId, String mode) {
         updater.update(stringListenMode(sessionId), mode, 30 * 60);
     }
 

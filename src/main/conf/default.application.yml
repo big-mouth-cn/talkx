@@ -35,6 +35,16 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
       logic-delete-field: deleted
+warcar:
+  integration:
+    eventbus:
+      async-event-bus-pool-size: 500
+management:
+  endpoints:
+    web:
+      base-path: /metrics
+      exposure:
+        include: health, info, prometheus
 config:
   # LLM相关配置，只要是支持OpenAI协议的都支持，默认提供 AIGateway 的测试账号
   llm-api-host: https://api.aigateway.work

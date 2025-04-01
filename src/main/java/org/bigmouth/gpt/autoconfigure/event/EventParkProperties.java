@@ -16,10 +16,6 @@ public class EventParkProperties {
      * 异步事件总线核心线程数大小
      */
     private int asyncEventBusPoolSize = CORE_SIZE;
-    /**
-     * 异步事件总线队列阻塞报警线
-     */
-    private int asyncEventBusAlarmBlockQueueSize = 100;
 
     public int getAsyncEventBusPoolSize() {
         return asyncEventBusPoolSize;
@@ -27,13 +23,5 @@ public class EventParkProperties {
 
     public void setAsyncEventBusPoolSize(int asyncEventBusPoolSize) {
         this.asyncEventBusPoolSize = asyncEventBusPoolSize;
-    }
-
-    public int getAsyncEventBusAlarmBlockQueueSize() {
-        return asyncEventBusAlarmBlockQueueSize;
-    }
-
-    public void setAsyncEventBusAlarmBlockQueueSize(int asyncEventBusAlarmBlockQueueSize) {
-        this.asyncEventBusAlarmBlockQueueSize = asyncEventBusAlarmBlockQueueSize;
     }
 }

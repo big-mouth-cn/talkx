@@ -42,6 +42,14 @@ public class ListenMessageHandler implements MessageHandler {
     @Override
     public DataPacket handle(DataPacket dataPacket) {
         String sessionId = dataPacket.getSessionId();
+
+        // Save Listen DataPacket
+        listenMessageHolder.saveListenDataPacket(sessionId, dataPacket);
+        String mode = dataPacket.getMode();
+        if (StringUtils.isNotBlank(mode)) {
+            listenMessageHolder.saveListenMode(sessionId, mode);
+        }
+
         UdpHello udpHello = helloMessageHandler.getUdpHelloBySessionId(sessionId);
 
         if (dataPacket.isStateStart()) {
@@ -70,11 +78,7 @@ public class ListenMessageHandler implements MessageHandler {
             // 发送 STT 事件
             eventPark.post(new Speech2TextSuccessEvent(this, context, udpHello, text));
         }
-        listenMessageHolder.save(sessionId, dataPacket);
-        String mode = dataPacket.getMode();
-        if (StringUtils.isNotBlank(mode)) {
-            listenMessageHolder.save(sessionId, mode);
-        }
+
         return null;
     }
 

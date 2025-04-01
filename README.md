@@ -212,5 +212,10 @@ TalkX 相关配置，包括语言模型、音色、声音复刻等。
 支持。通过大模型的意图识别和Function_Call实现的，因此你选择的大模型需要支持才可以。
 
 
+- **...than one time zone. You must configure either...**  
+启动报错，错误信息包含 `...than one time zone. You must configure either...`，这表示数据库连接需要设置时区。
+将数据库连接 `?` 后面修改成：`?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai`
+
+
 - **更多问题**  
 可以加QQ群交流：953272742

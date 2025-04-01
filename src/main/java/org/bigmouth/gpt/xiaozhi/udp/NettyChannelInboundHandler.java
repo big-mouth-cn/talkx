@@ -83,7 +83,7 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
 
             DataPacket listenDataPacket = listenMessageHolder.getListenDataPacket(sessionId);
             if (Objects.isNull(listenDataPacket)) {
-                log.error("Not found listenDataPacket: {}", sessionId);
+                log.warn("Not found listenDataPacket: {}", sessionId);
                 return;
             }
 
