@@ -18,7 +18,8 @@ import org.springframework.context.annotation.Configuration;
         XiaozhiByteDanceConfig.class,
         XiaozhiMemoryConfig.class,
         XiaozhiAsrConfig.class,
-        XiaozhiTalkXConfig.class
+        XiaozhiTalkXConfig.class,
+        XiaozhiVoiceReprintConfig.class
 })
 public class XiaozhiConfigAutoConfigurer {
 }

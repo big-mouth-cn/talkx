@@ -1,65 +1,73 @@
 <template>
-    <n-form class="formComp" ref="formRef" :model="formData" :rules="rules" label-placement="left" :label-width="112"
-        require-mark-placement="right-hanging" size="medium">
-        <div class="diver">声音设置</div>
-        <n-form-item label="声音角色" path="role">
-            <n-select class="tp_select" v-model:value="formData.role" :options="audioRoleOptions" @update:value="handleRoleChange" :loading="loading" />
-        </n-form-item>
-        <n-form-item label="试听" v-if="currentDemoUrl">
-            <audio :src="currentDemoUrl" controls></audio>
-        </n-form-item>
+    <div v-if="!loading">
+        <n-form class="formComp" ref="formRef" :model="formData" :rules="rules" label-placement="left" :label-width="112"
+            require-mark-placement="right-hanging" size="medium">
+            <div class="diver">声音设置</div>
+            <n-form-item label="声音角色" path="role">
+                <n-select class="tp_select" v-model:value="formData.role" :options="audioRoleOptions" @update:value="handleRoleChange" :loading="loading" />
+            </n-form-item>
+            <n-form-item label="试听" v-if="currentDemoUrl">
+                <audio :src="currentDemoUrl" controls></audio>
+            </n-form-item>
 
-        <div class="diver">模型设置</div>
-        <n-form-item label="自定义模型">
-            <n-space>
-                <n-switch v-model:value="formData.customModel" :checked-value="1" :unchecked-value="0" />
-            </n-space>
-        </n-form-item>
-        <n-form-item label=" " v-if="formData.customModel === 1" style="color: #b7b7b7; font-size: 12px; margin-top: -20px;">
-                自定义模型服务，必须支持OpenAI协议。
-        </n-form-item>
-        <n-form-item label="模型地址" path="proxyBaseUrl" v-if="formData.customModel === 1">
-            <n-input class="_input" v-model:value="formData.proxyBaseUrl" placeholder="请输入模型地址，如：https://api.aigateway.work/v1/" />
-        </n-form-item>
-        <n-form-item label="模型密钥" path="apiKey" v-if="formData.customModel === 1">
-            <n-input class="_input" v-model:value="formData.apiKey" placeholder="请输入模型密钥，如：sk-8P7p27Stw5lkMn0jhHx6u6g8hfa7zXO1Jw8CPofz" />
-        </n-form-item>
-        <n-form-item label="设置模型">
-            <n-select
-                v-if="formData.customModel === 1"
-                class="tp_select"
-                v-model:value="formData.llmModel"
-                :options="modelOptions"
-                filterable
-                tag
-                @update:value="handleModelChange"
-            />
-            <n-select
-                v-if="formData.customModel === 0"
-                class="tp_select"
-                v-model:value="formData.llmModel"
-                :options="modelOptions"
-                @update:value="handleModelChange"
-            />
-        </n-form-item>
-        <n-form-item label=" " style="color: #b7b7b7; font-size: 12px; margin-top: -20px;">
-                设置这个AI的模型，仅使用“智体”绑定的设备聊天时有效。使用自定义模型时允许自由输入。
-        </n-form-item>
-        <n-form-item label="是否支持IoT">
-            <n-space>
-                <n-switch v-model:value="formData.isSupportTool" :checked-value="1" :unchecked-value="0" />
-            </n-space>
-        </n-form-item>
-
-        <n-form-item>
-            <div class="footer flex">
-                <n-button v-if="formData.customModel === 1" class="testbtn" type="default" @click="handleTest" :loading="testing">
-                    测试自定义模型服务
-                </n-button>
-                <n-button  class="_confirm_btn" type="info" @click="handleSubmit" :loading="submitting">保存</n-button>
+            <div class="diver">模型设置</div>
+            <n-form-item label="自定义模型">
+                <n-space>
+                    <n-switch v-model:value="formData.customModel" :checked-value="1" :unchecked-value="0" />
+                </n-space>
+            </n-form-item>
+            <div v-if="formData.customModel === 1">
+                <n-form-item label=" " style="color: #b7b7b7; font-size: 12px; margin-top: -20px;" v-if="formData.friendType === 3">
+                    💬 当前 {{ formData.friendName }} 已经是阿里云百炼应用，不建议再自定义模型。如果你一定要这么做，配置后将不会调用阿里云百炼应用。
+                </n-form-item>
+                <n-form-item label="模型地址" path="proxyBaseUrl">
+                    <n-input class="_input" v-model:value="formData.proxyBaseUrl" placeholder="请输入模型的完整请求地址，如：https://api.aigateway.work/v1/chat/completions" />
+                </n-form-item>
+                <n-form-item label=" " style="color: #b7b7b7; font-size: 12px; margin-top: -20px;">
+                        自定义模型服务，必须支持OpenAI协议。
+                </n-form-item>
+                <n-form-item label="模型密钥" path="apiKey">
+                    <n-input class="_input" v-model:value="formData.apiKey" placeholder="请输入模型密钥，如：sk-8P7p27Stw5lkMn0jhHx6u6g8hfa7zXO1Jw8CPofz" />
+                </n-form-item>
             </div>
-        </n-form-item>
-    </n-form>
+            <div v-if="formData.customModel === 1 || formData.friendType === 1">
+                <n-form-item label="设置模型">
+                    <n-select
+                        v-if="formData.customModel === 1"
+                        class="tp_select"
+                        v-model:value="formData.llmModel"
+                        :options="modelOptions"
+                        filterable
+                        tag
+                        @update:value="handleModelChange"
+                    />
+                    <n-select
+                        v-if="formData.customModel === 0"
+                        class="tp_select"
+                        v-model:value="formData.llmModel"
+                        :options="modelOptions"
+                        @update:value="handleModelChange"
+                    />
+                </n-form-item>
+                <n-form-item label=" " style="color: #b7b7b7; font-size: 12px; margin-top: -20px;">
+                        设置这个AI的模型，仅使用“智体”绑定的设备聊天时有效。使用自定义模型时允许自由输入。
+                </n-form-item>
+                <n-form-item label="是否支持IoT">
+                    <n-space>
+                        <n-switch v-model:value="formData.isSupportTool" :checked-value="1" :unchecked-value="0" />
+                    </n-space>
+                </n-form-item>
+            </div>
+            <n-form-item>
+                <div class="footer flex">
+                    <n-button v-if="formData.customModel === 1" class="testbtn" type="default" @click="handleTest" :loading="testing">
+                        测试自定义模型服务
+                    </n-button>
+                    <n-button  class="_confirm_btn" type="info" @click="handleSubmit" :loading="submitting">保存</n-button>
+                </div>
+            </n-form-item>
+        </n-form>
+    </div>
 </template>
 
 <script setup>
@@ -84,7 +92,9 @@ const formData = ref({
     proxyBaseUrl: '',
     apiKey: '',
     llmModel: ref(null),
-    isSupportTool: 0
+    isSupportTool: 0,
+    friendType: 1,
+    friendName: ''
 });
 
 const rules = {
@@ -116,14 +126,17 @@ const getCurrentConfig = async () => {
             }
         });
         if (res) {
-            const { userFriendMediaConfig, user } = res;
+            const { userFriendMediaConfig, user, friendVo } = res;
+            
             formData.value = {
                 role: userFriendMediaConfig.audioRole,
                 customModel: userFriendMediaConfig.customModel,
                 llmModel: userFriendMediaConfig.llmModel,
                 proxyBaseUrl: userFriendMediaConfig.proxyBaseUrl,
                 apiKey: userFriendMediaConfig.apiKey,
-                isSupportTool: userFriendMediaConfig.isSupportTool
+                isSupportTool: userFriendMediaConfig.isSupportTool,
+                friendType: friendVo.friendType,
+                friendName: friendVo.name
             };
             return res;
         }

@@ -1,7 +1,7 @@
 <template>
   <div class="Device">
     <div class="content">
-      <n-card title="智体" :bordered="false"
+      <n-card title="🤖 智体" :bordered="false"
       style="margin-bottom: 16px; background-color: transparent; color: var(--tp_avatar_color);">
         <n-tabs type="line" animated pane-wrapper-class="talkx-pane-wrapper" 
         >

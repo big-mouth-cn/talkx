@@ -2,6 +2,7 @@ package org.bigmouth.gpt.entity.response;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.bigmouth.gpt.entity.FriendVo;
 import org.bigmouth.gpt.entity.User;
 import org.bigmouth.gpt.entity.UserFriendMediaConfig;
 
@@ -15,4 +16,5 @@ public class UserFriendMediaConfigVo {
 
     private UserFriendMediaConfig userFriendMediaConfig;
     private User user;
+    private FriendVo friendVo;
 }

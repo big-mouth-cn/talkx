@@ -49,6 +49,8 @@ config:
   # LLM相关配置，只要是支持OpenAI协议的都支持，默认提供 AIGateway 的测试账号
   llm-api-host: https://api.aigateway.work
   llm-api-key: sk-k7lNcib7o54AV375dgKOIDFcZijZi2Zb02M3TWrs
+  # 阿里云百炼平台API密钥，当AI类型是阿里云百炼应用时使用
+  # aliyun-dashscope-api-key: <dashscope-api-key>
   # 是否开启Redis缓存，如果不启用，会造成以下问题：
   # 1. 当服务重启后，会话数据会丢失，如登录状态。
   # 当使用集群时必须开启Redis换成，否则无法正常使用。
@@ -90,6 +92,16 @@ xiaozhi:
     # - talkx：必须配置  forest.variables.talkxCenterBaseUrl
     # - sensevoice_fastapi：必须配置 forest.variables.sensevoiceFastApiUrl
     type: talkx
+
+  # 声音复刻相关配置
+  voice:
+    reprint:
+      # 可选类型：talkx、alibaba
+      # - talkx：必须配置 forest.variables.talkxCenterBaseUrl、forest.read-timeout
+      # - alibaba：必须配置 xiaozhi.alibaba 相关配置
+      type: talkx
+
+  # 说话活动监测配置
   silero:
     model-path: ../conf/silero_vad.onnx
     start-threshold: 0.6
@@ -114,6 +126,7 @@ xiaozhi:
     type: none
 forest:
   log-enabled: false
+  read-timeout: 30000
   variables:
     # 设置 Mem0 接口地址
 #    mem0baseUrl: http://172.27.1.26:8000

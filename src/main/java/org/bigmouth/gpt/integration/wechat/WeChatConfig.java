@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author huxiao
  */
 @Data
-@ConfigurationProperties(prefix = "wechat")
+@ConfigurationProperties(prefix = "config.wechat")
 public class WeChatConfig {
 
     private String appId;

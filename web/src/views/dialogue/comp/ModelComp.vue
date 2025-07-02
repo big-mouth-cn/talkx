@@ -15,7 +15,7 @@
         <div>
           <div
             class="model_text flex_sx_center"
-            v-if="modelInfo"
+            v-if="modelInfo && modelInfo.friendType === 1"
             @click.stop="modelClick"
             :style="{ 
               cursor: modelInfo.showModelSelect ? 'pointer' : 'not-allowed'
@@ -57,8 +57,15 @@ const modelInfo = computed(() => {
   if (useLogin.user) {
     console.log(`current: ${JSON.stringify(curr.value)}`)
     const modelName = curr.value.fixedModel || useLogin.user.model;
-    return { model: modelName, icon: useLogin.user.modelIcon, showModelSelect: curr.value.showModelSelect };
+    return { 
+      model: modelName, 
+      icon: useLogin.user.modelIcon, 
+      showModelSelect: curr.value.showModelSelect,
+      friendType: curr.value.friendType
+     };
   }
+  // 返回默认值，确保即使在 useLogin.user 不存在时也有有效的对象
+  return { model: '', icon: '', showModelSelect: false };
 });
 const bodyClick = () => {
   showModelList.value = false;

@@ -5,6 +5,7 @@ import org.bigmouth.gpt.service.IDeviceService;
 import org.bigmouth.gpt.xiaozhi.autoconfigure.XiaozhiAutoConfigurer;
 import org.bigmouth.gpt.xiaozhi.config.XiaozhiMqttConfig;
 import org.bigmouth.gpt.xiaozhi.handler.MessageHandlerFactory;
+import org.bigmouth.gpt.xiaozhi.mqtt.FrontEndHolder;
 import org.bigmouth.gpt.xiaozhi.mqtt.MqttService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -25,11 +26,13 @@ public class AliyunOnsMqttServiceAutoConfigurer  {
     private final XiaozhiMqttConfig xiaozhiMqttConfig;
     private final IDeviceService deviceService;
     private final MessageHandlerFactory messageHandlerFactory;
+    private final FrontEndHolder frontEndHolder;
 
-    public AliyunOnsMqttServiceAutoConfigurer(XiaozhiMqttConfig xiaozhiMqttConfig, IDeviceService deviceService, MessageHandlerFactory messageHandlerFactory) {
+    public AliyunOnsMqttServiceAutoConfigurer(XiaozhiMqttConfig xiaozhiMqttConfig, IDeviceService deviceService, MessageHandlerFactory messageHandlerFactory, FrontEndHolder frontEndHolder) {
         this.xiaozhiMqttConfig = xiaozhiMqttConfig;
         this.deviceService = deviceService;
         this.messageHandlerFactory = messageHandlerFactory;
+        this.frontEndHolder = frontEndHolder;
     }
 
     @Bean
@@ -45,11 +48,16 @@ public class AliyunOnsMqttServiceAutoConfigurer  {
 
     @Bean
     public MqttCloudConsumerMessageListener mqttCloudConsumerMessageListener() {
-        return new MqttCloudConsumerMessageListener(xiaozhiMqttConfig, messageHandlerFactory, mqttCloudProducer());
+        return new MqttCloudConsumerMessageListener(xiaozhiMqttConfig, messageHandlerFactory, mqttCloudProducer(), frontEndHolder);
+    }
+
+    @Bean
+    public MqttCloudTalkXFrontEndConsumerMessageListener mqttCloudTalkXFrontEndConsumerMessageListener() {
+        return new MqttCloudTalkXFrontEndConsumerMessageListener(mqttCloudProducer());
     }
 
     @Bean
     public MqttCloudConsumer mqttCloudConsumer() {
-        return new MqttCloudConsumer(xiaozhiMqttConfig, mqttCloudConsumerMessageListener());
+        return new MqttCloudConsumer(xiaozhiMqttConfig, mqttCloudConsumerMessageListener(), mqttCloudTalkXFrontEndConsumerMessageListener());
     }
 }

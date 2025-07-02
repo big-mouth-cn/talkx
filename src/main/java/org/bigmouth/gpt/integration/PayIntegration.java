@@ -1,6 +1,7 @@
 package org.bigmouth.gpt.integration;
 
 import org.bigmouth.gpt.facade.PayOrder;
+import org.bigmouth.gpt.facade.PayService;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -11,11 +12,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class PayIntegration {
 
+    private final PayService payService;
+
+    public PayIntegration(PayService payService) {
+        this.payService = payService;
+    }
+
     public String pay(PayOrder payOrder) {
-        throw new UnsupportedOperationException();
+        return payService.pay(payOrder);
     }
 
     public void close(PayOrder payOrder) {
-        throw new UnsupportedOperationException();
+        payService.close(payOrder);
     }
 }

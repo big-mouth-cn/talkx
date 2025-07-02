@@ -111,9 +111,11 @@ public class PromptServiceImpl implements PromptService {
         return prompt
                 .setRequest(Optional.ofNullable(request).orElse(new OpenApiRequest()))
                 .setSystemPrompt(userFriend.getSystemPrompt())
+                .setContentPrompt(userFriend.getContentPrompt())
                 .setRoleType(userFriend.getRoleType())
                 .setGptsId(userFriend.getGptsId())
                 .setMessageContextSize(userFriend.getMessageContextSize())
+                .setVariables(userFriend.getVariables())
                 ;
     }
 

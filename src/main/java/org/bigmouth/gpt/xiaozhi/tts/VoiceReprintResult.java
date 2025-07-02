@@ -12,6 +12,10 @@ import lombok.experimental.Accessors;
 public class VoiceReprintResult {
 
     /**
+     * 复刻声音的服务平台
+     */
+    private TtsPlatformType ttsPlatformType;
+    /**
      * 语音模型
      */
     private String audioModel;

@@ -4,7 +4,5 @@ public interface VoiceReprintService {
 
     TtsPlatformType of();
 
-    String reprint(String voiceSrcUrl, String modelNamePrefix);
-
     VoiceReprintResult reprint(VoiceReprintRequest request);
 }

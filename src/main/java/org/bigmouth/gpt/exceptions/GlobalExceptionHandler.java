@@ -179,7 +179,7 @@ public class GlobalExceptionHandler implements EventListener<ChatRetryEvent> {
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, DateTimeParseException.class, MissingServletRequestParameterException.class})
     public ResponseEntity<String> illegalArgument(Throwable throwable) {
-        log.warn("{}", throwable.getMessage());
+        log.warn("{}", throwable.getMessage(), throwable);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(throwable.getMessage());
     }
 

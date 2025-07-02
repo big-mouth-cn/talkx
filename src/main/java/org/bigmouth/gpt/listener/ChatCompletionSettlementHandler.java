@@ -7,6 +7,7 @@ import com.bxm.warcar.integration.eventbus.core.Subscribe;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bigmouth.gpt.ai.entity.ApiKey;
+import org.bigmouth.gpt.ai.entity.Message;
 import org.bigmouth.gpt.ai.entity.Usage;
 import org.bigmouth.gpt.entity.AiModel;
 import org.bigmouth.gpt.entity.Friend;
@@ -56,10 +57,6 @@ public class ChatCompletionSettlementHandler implements EventListener<ChatComple
         }
         Prompt prompt = parameter.getPrompt();
         String roleType = prompt.getRoleType();
-        Usage usage = parameter.getUsage();
-        if (Objects.isNull(usage)) {
-            log.warn("Usage object is null!");
-        }
 
         AiModel aiModel = parameter.getAiModel();
         List<String> feeItems = Lists.newArrayList();
@@ -81,7 +78,7 @@ public class ChatCompletionSettlementHandler implements EventListener<ChatComple
         // 计算Input
         BigDecimal inputCoins = aiModel.getInputCoins();
         if (!settleOnPer && isGreaterThanZero(inputCoins)) {
-            int requestTokens = (null != usage) ? usage.getPromptTokens() : 0;
+            int requestTokens = computeInputTokens(parameter);
             BigDecimal inputCost = TikTokensUtils.computePrice(requestTokens, inputCoins);
             totalCoins = totalCoins.add(inputCost);
             feeItems.add(String.format("提问：(%d tokens)", requestTokens));
@@ -90,7 +87,7 @@ public class ChatCompletionSettlementHandler implements EventListener<ChatComple
         // 计算Output
         BigDecimal outputCoins = aiModel.getOutputCoins();
         if (!settleOnPer && isGreaterThanZero(outputCoins)) {
-            int completionTokens = (null != usage) ? usage.getCompletionTokens() : TikTokensUtils.tokens(aiModel.getModelName(), parameter.getCompletion());
+            int completionTokens = computeCompletionTokens(parameter);
             BigDecimal outputCost = TikTokensUtils.computePrice(completionTokens, outputCoins);
             totalCoins = totalCoins.add(outputCost);
             feeItems.add(String.format("回答：(%d tokens)", completionTokens));
@@ -115,6 +112,28 @@ public class ChatCompletionSettlementHandler implements EventListener<ChatComple
                         userId, type, totalCoins, title, billDesc);
             }
         }
+    }
+
+    private int computeInputTokens(ChatCompletionEvent.Parameter parameter) {
+        Usage usage = parameter.getUsage();
+        if (null != usage && usage.getPromptTokens() > 0) {
+            return usage.getPromptTokens();
+        }
+        Message lastUserMessage = parameter.getLastUserMessage();
+        if (null != lastUserMessage) {
+            String modelName = parameter.getAiModel().getModelName();
+            return TikTokensUtils.tokens(modelName, lastUserMessage.getContent());
+        }
+        return 0;
+    }
+
+    private int computeCompletionTokens(ChatCompletionEvent.Parameter parameter) {
+        Usage usage = parameter.getUsage();
+        if (null != usage && usage.getCompletionTokens() > 0) {
+            return usage.getCompletionTokens();
+        }
+        String modelName = parameter.getAiModel().getModelName();
+        return TikTokensUtils.tokens(modelName, parameter.getCompletion());
     }
 
     private boolean isFriend(String roleType) {

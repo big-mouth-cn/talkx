@@ -51,6 +51,14 @@ public interface IUserService extends IService<User> {
     User getUserFromToken(String token);
 
     /**
+     * 获取User，从token缓存
+     * @param token token
+     * @param refreshExpireTime 是否刷新过期时间
+     * @return User对象
+     */
+    User getUserFromToken(String token, boolean refreshExpireTime);
+
+    /**
      * 退出登录
      * @param token token
      */

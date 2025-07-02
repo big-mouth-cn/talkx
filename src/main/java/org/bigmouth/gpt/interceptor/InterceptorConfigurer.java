@@ -30,7 +30,6 @@ public class InterceptorConfigurer implements WebMvcConfigurer {
                 .addPathPatterns("/user/voice/**")
                 .addPathPatterns("/coin_bill/**")
                 .addPathPatterns("/feedback/**")
-                .addPathPatterns("/upload/**")
                 .addPathPatterns("/order/create")
                 .addPathPatterns("/friend/**")
                 .addPathPatterns("/favorites/**")

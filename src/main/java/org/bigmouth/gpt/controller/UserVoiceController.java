@@ -9,7 +9,10 @@ import org.bigmouth.gpt.entity.UserVoiceReprint;
 import org.bigmouth.gpt.interceptor.ContextFactory;
 import org.bigmouth.gpt.service.IUserFriendMediaConfigService;
 import org.bigmouth.gpt.service.IUserVoiceReprintService;
-import org.bigmouth.gpt.xiaozhi.tts.*;
+import org.bigmouth.gpt.xiaozhi.tts.VoiceReprintRequest;
+import org.bigmouth.gpt.xiaozhi.tts.VoiceReprintResult;
+import org.bigmouth.gpt.xiaozhi.tts.VoiceReprintService;
+import org.bigmouth.gpt.xiaozhi.tts.VoiceReprintServiceFactory;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -73,13 +76,12 @@ public class UserVoiceController {
                 .eq(UserVoiceReprint::getUserId, userId)) >= 3) {
             return ResponseEntity.badRequest().body("一个用户最多只能复刻3个声音。");
         }
-        TtsPlatformType defaultType = TtsPlatformType.Alibaba;
-        VoiceReprintService voiceReprintService = voiceReprintServiceFactory.get(defaultType);
+        VoiceReprintService voiceReprintService = voiceReprintServiceFactory.get();
         if (null == voiceReprintService) {
             return ResponseEntity.badRequest().body("不支持的语音平台。");
         }
         String voiceSrcUrl = req.getVoiceSrcUrl();
-        String modelNamePrefix = "talkx" + userId;
+        String modelNamePrefix = "opentalkx";
         VoiceReprintResult result = voiceReprintService.reprint(new VoiceReprintRequest().setVoiceSrcUrl(voiceSrcUrl).setModelNamePrefix(modelNamePrefix));
         if (null == result) {
             return ResponseEntity.badRequest().body("创建失败，请联系管理员。");
@@ -89,7 +91,7 @@ public class UserVoiceController {
         reprint.setUserId(userId);
         reprint.setVoiceName(req.getVoiceName());
         reprint.setVoiceSrcUrl(voiceSrcUrl);
-        reprint.setAudioPlatformType(defaultType.name());
+        reprint.setAudioPlatformType(result.getTtsPlatformType().name());
         reprint.setAudioModel(result.getAudioModel());
         reprint.setAudioRole(modelId);
         userVoiceReprintService.save(reprint);

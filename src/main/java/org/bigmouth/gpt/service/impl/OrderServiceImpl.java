@@ -18,6 +18,7 @@ import org.bigmouth.gpt.service.CoinService;
 import org.bigmouth.gpt.service.ICoinCatalogService;
 import org.bigmouth.gpt.service.IOrderService;
 import org.bigmouth.gpt.utils.Constants;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final DistributedLock distributedLock;
 
     public OrderServiceImpl(ApplicationConfig applicationConfig, ICoinCatalogService coinCatalogService,
-                            IdGenerator idGenerator, PayIntegration payIntegration, CoinService coinService) {
+                            @Qualifier("orderIdGenerator") IdGenerator idGenerator, PayIntegration payIntegration, CoinService coinService) {
         this.applicationConfig = applicationConfig;
         this.coinCatalogService = coinCatalogService;
         this.idGenerator = idGenerator;

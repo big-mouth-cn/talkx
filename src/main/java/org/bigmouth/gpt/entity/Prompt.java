@@ -57,6 +57,11 @@ public class Prompt {
     private OpenApiRequest request = new OpenApiRequest();
 
     /**
+     * 自定义变量
+     */
+    private String variables;
+
+    /**
      * 星火接口参数
      */
     private XinghuoApiRequest xinghuoApiRequest = new XinghuoApiRequest();

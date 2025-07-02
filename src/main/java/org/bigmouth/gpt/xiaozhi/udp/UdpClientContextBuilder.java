@@ -21,6 +21,7 @@ import org.bigmouth.gpt.service.IUserFriendService;
 import org.bigmouth.gpt.utils.BatchBlockingQueue;
 import org.bigmouth.gpt.utils.BatchQueue;
 import org.bigmouth.gpt.utils.RedisBatchBlockingQueue;
+import org.bigmouth.gpt.xiaozhi.config.XiaozhiConfig;
 import org.bigmouth.gpt.xiaozhi.config.XiaozhiSileroConfig;
 import org.bigmouth.gpt.xiaozhi.entity.UdpHello;
 import org.bigmouth.gpt.xiaozhi.tts.TtsPlatformType;
@@ -54,10 +55,11 @@ public class UdpClientContextBuilder {
     private final IUserFriendService userFriendService;
     private final Counter counter;
     private final ApplicationConfig applicationConfig;
+    private final XiaozhiConfig xiaozhiConfig;
 
     private JedisPool jedisPool;
 
-    public UdpClientContextBuilder(EventPark eventPark, UdpClientContextHolder udpClientContextHolder, XiaozhiSileroConfig xiaozhiSileroConfig, IDeviceService deviceService, IUserFriendMediaConfigService userFriendMediaConfigService, TtsServiceFactory ttsServiceFactory, ISessionService sessionService, IUserFriendService userFriendService, Counter counter, ApplicationConfig applicationConfig) {
+    public UdpClientContextBuilder(EventPark eventPark, UdpClientContextHolder udpClientContextHolder, XiaozhiSileroConfig xiaozhiSileroConfig, IDeviceService deviceService, IUserFriendMediaConfigService userFriendMediaConfigService, TtsServiceFactory ttsServiceFactory, ISessionService sessionService, IUserFriendService userFriendService, Counter counter, ApplicationConfig applicationConfig, XiaozhiConfig xiaozhiConfig) {
         this.eventPark = eventPark;
         this.udpClientContextHolder = udpClientContextHolder;
         this.xiaozhiSileroConfig = xiaozhiSileroConfig;
@@ -68,6 +70,7 @@ public class UdpClientContextBuilder {
         this.userFriendService = userFriendService;
         this.counter = counter;
         this.applicationConfig = applicationConfig;
+        this.xiaozhiConfig = xiaozhiConfig;
     }
 
     @Autowired(required = false)
@@ -83,7 +86,7 @@ public class UdpClientContextBuilder {
                     AudioVadListeningConsumer audioBufferConsumer = new AudioVadListeningConsumer(xiaozhiSileroConfig, eventPark, udpHello, udpClientContextHolder);
 
                     BatchQueue<byte[]> batchQueue;
-                    if (applicationConfig.isEnableRedisCache()) {
+                    if (applicationConfig.isEnableRedisCache() && xiaozhiConfig.isEnableRedisAudioQueue()) {
                         String key = KeyBuilder.build("talkx", "queue", "audio", sessionId);
 
                         Function<byte[], String> serializer = Hex::encodeHexString;

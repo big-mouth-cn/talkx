@@ -23,5 +23,7 @@ public interface IFriendService extends IService<Friend> {
 
     void deleteCacheById(Long id);
 
+    void deleteCacheByRoleType(String roleType);
+
     Map<String, Integer> countFriendTag();
 }

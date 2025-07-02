@@ -22,13 +22,15 @@ public interface IUserFriendService extends IService<UserFriend> {
 
     UserFriend queryWithCache(Long userId, Integer productType, String roleType);
 
+    void deleteFriendCache(Long userId, Integer productType, String roleType);
+
     void setTop(User user, Long friendId, boolean isTop);
 
     FriendVo follow(User user, Long friendId);
 
     void delete(User user, Long friendId);
 
-    void deleteCache(Integer productType, User user);
+    void deleteFriendListCache(Integer productType, User user);
 
     List<FriendVo> getFriendsForGuest();
 

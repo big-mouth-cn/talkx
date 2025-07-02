@@ -1,7 +1,10 @@
 package org.bigmouth.gpt.mapper.talkx;
 
+import org.apache.ibatis.annotations.Param;
 import org.bigmouth.gpt.entity.UserFriend;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +16,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface UserFriendMapper extends BaseMapper<UserFriend> {
 
+    int updateSystemPrompt(@Param("friendId") Long friendId, @Param("systemPrompt") String systemPrompt);
+
+    List<Long> getUserIdByFriendId(@Param("friendId") Long friendId);
 }

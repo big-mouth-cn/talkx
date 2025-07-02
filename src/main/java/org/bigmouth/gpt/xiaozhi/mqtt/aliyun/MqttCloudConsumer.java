@@ -21,11 +21,13 @@ public class MqttCloudConsumer implements InitializingBean, DisposableBean {
 
     private final XiaozhiMqttConfig xiaozhiMqttConfig;
     private final ServerConsumer serverConsumer;
-    private final MessageListener messageListener;
+    private final MqttCloudConsumerMessageListener mqttCloudConsumerMessageListener;
+    private final MqttCloudTalkXFrontEndConsumerMessageListener mqttCloudTalkXFrontEndConsumerMessageListener;
 
-    public MqttCloudConsumer(XiaozhiMqttConfig xiaozhiMqttConfig, MessageListener messageListener) {
+    public MqttCloudConsumer(XiaozhiMqttConfig xiaozhiMqttConfig, MqttCloudConsumerMessageListener mqttCloudConsumerMessageListener, MqttCloudTalkXFrontEndConsumerMessageListener mqttCloudTalkXFrontEndConsumerMessageListener) {
         this.xiaozhiMqttConfig = xiaozhiMqttConfig;
-        this.messageListener = messageListener;
+        this.mqttCloudConsumerMessageListener = mqttCloudConsumerMessageListener;
+        this.mqttCloudTalkXFrontEndConsumerMessageListener = mqttCloudTalkXFrontEndConsumerMessageListener;
 
         String domain = xiaozhiMqttConfig.getEndpoint();
         int port = xiaozhiMqttConfig.getCloudPort();
@@ -51,7 +53,8 @@ public class MqttCloudConsumer implements InitializingBean, DisposableBean {
     public void init() {
         try {
             this.serverConsumer.start();
-            this.serverConsumer.subscribeTopic(xiaozhiMqttConfig.getTopicOfServer(), messageListener);
+            this.serverConsumer.subscribeTopic(xiaozhiMqttConfig.getTopicOfServer(), mqttCloudConsumerMessageListener);
+            this.serverConsumer.subscribeTopic(xiaozhiMqttConfig.getTalkxMqttTopicOfServer(), mqttCloudTalkXFrontEndConsumerMessageListener);
             log.info("MQTT cloud consumer started");
         } catch (IOException | TimeoutException e) {
             log.error("Failed to start MQTT cloud consumer", e);

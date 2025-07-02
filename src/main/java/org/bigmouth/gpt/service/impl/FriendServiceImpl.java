@@ -38,7 +38,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     public Friend getByRoleType(String roleType) {
         return fetcher.fetch(RedisKeys.AboutFriend.stringFriend(roleType),
                 () -> getOne(Wrappers.query(new Friend().setRoleType(roleType))),
-                Friend.class, 60);
+                Friend.class, 5 * 60);
     }
 
     @Override
@@ -49,6 +49,11 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     @Override
     public void deleteCacheById(Long id) {
         updater.remove(RedisKeys.AboutFriend.stringFriend(id));
+    }
+
+    @Override
+    public void deleteCacheByRoleType(String roleType) {
+        updater.remove(RedisKeys.AboutFriend.stringFriend(roleType));
     }
 
     @Override

@@ -24,7 +24,7 @@ public class ChatRequest {
     /**
      * 产品类型
      */
-    private int productId;
+    private int productId = Constants.PRODUCT_TYPE_WEB;
     /**
      * SessionID
      */

@@ -121,11 +121,11 @@ const getData = async (set) => {
 };
 const getOptions = (item) => {
   const arr = [{ label: item.top ? "取消置顶" : "置顶", key: "top" }];
-  const ordinary = item.friendType == 1;
+  const ordinary = item.friendType == 1 || item.friendType == 3 || item.friendType == 4 || item.friendType == 5;
   if (ordinary) {
     // 普通AI类型才有 编辑
     arr.push({ label: "编辑", key: "edit" });
-    arr.push({ label: "智体", key: "device" });
+    arr.push({ label: "🤖 智体", key: "device" });
   }
   if (item.roleType !== "0") {
     arr.push({ label: "删除", key: "del" });

@@ -121,6 +121,11 @@ public class UserFriend implements Serializable {
     private String systemPrompt;
 
     /**
+     * 用户提示词
+     */
+    private String contentPrompt;
+
+    /**
      * 上下文数量
      */
     private Integer messageContextSize;
@@ -129,6 +134,11 @@ public class UserFriend implements Serializable {
      * 模型的配置JSON
      */
     private String openaiRequestBody;
+
+    /**
+     * 自定义变量定义，一般用于阿里云百炼等平台调用时的传参，默认是一个JSON格式的数据。
+     */
+    private String variables;
 
     /**
      * 创建时间
@@ -171,9 +181,14 @@ public class UserFriend implements Serializable {
     public static final String TAG = "tag";
 
     public static final String SYSTEM_PROMPT = "system_prompt";
+
+    public static final String CONTENT_PROMPT = "content_prompt";
+
     public static final String MESSAGE_CONTEXT_SIZE = "message_context_size";
 
     public static final String OPENAI_REQUEST_BODY = "openai_request_body";
+
+    public static final String VARIABLES = "variables";
 
     public static final String CREATE_TIME = "create_time";
     public static final String MODIFY_TIME = "modify_time";
@@ -197,6 +212,7 @@ public class UserFriend implements Serializable {
                 .setWelcome(friend.getWelcome())
                 .setIntro(friend.getIntro())
                 .setCssAvatar(friend.getCssAvatar())
-                .setTag(friend.getTag());
+                .setTag(friend.getTag())
+                .setVariables(friend.getVariables());
     }
 }

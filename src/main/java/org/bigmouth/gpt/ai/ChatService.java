@@ -17,7 +17,6 @@ public interface ChatService extends Ordered {
      * 返回这个实现属于哪个平台
      * @return 平台类型
      * @see org.bigmouth.gpt.utils.Constants.AiPlatform#PLATFORM_TYPE_OPENAI
-     * @see org.bigmouth.gpt.utils.Constants.AiPlatform#PLATFORM_TYPE_XINGHUO
      */
     Integer platformType();
 

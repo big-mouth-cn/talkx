@@ -180,6 +180,10 @@
   --tp_header_list_color: #FFFFFF;
 
   --tp_placeholder_color: #646464;
+
+  .n-base-selection.n-base-selection--disabled .n-base-selection-label {
+    background-color: var(--tp_headerlistbgcolor);
+  }
 }
 
 .light:root {
@@ -364,6 +368,10 @@
   }
 
   --tp_placeholder_color: #c2c2c2;
+
+  .n-base-selection.n-base-selection--disabled .n-base-selection-label {
+    background-color: var(--tp_headerlistbgcolor);
+  }
 }
 
 

@@ -60,4 +60,16 @@ public class XiaozhiMqttConfig {
     public String getServerUrl() {
         return "ssl://" + endpoint + ":8883";
     }
+
+    public String createP2pTopic(String clientId) {
+        // devices/p2p/GID_test@@@a0_85_e3_e1_55_34
+        String topicOfDevice = getTopicOfDevice();
+        return String.format("%s/p2p/%s", topicOfDevice, clientId);
+    }
+
+    public String createFrontP2pClient(String clientId) {
+        // forwards/p2p/GID_talkxclient@@@a0_85_e3_e1_55_34
+        String topicOfForward = getTalkxMqttTopicOfP2p();
+        return String.format("%s/p2p/%s", topicOfForward, clientId);
+    }
 }

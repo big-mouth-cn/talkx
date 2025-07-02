@@ -62,22 +62,26 @@ public class ListenMessageHandler implements MessageHandler {
                 context = createIfAbsent(udpHello);
             }
             eventPark.post(new VadEndEvent(this, context));
-        } else if (dataPacket.isStateDetect()) {
-            UdpClientContext context = udpClientContextHolder.get(sessionId);
-            if (null == context) {
-                context = createIfAbsent(udpHello);
-            }
-
-            // 如果是唤醒词唤起的，就不需要处理 VAD了。
-            String text = dataPacket.getText();
-
-            // 发送 STT 数据
-            DataPacket stt = DataPacket.builder().type(MessageType.STT.getValue()).text(text).sessionId(sessionId).build();
-            eventPark.post(new P2pMessageEvent(this, context, stt));
-
-            // 发送 STT 事件
-            eventPark.post(new Speech2TextSuccessEvent(this, context, udpHello, text));
         }
+
+        // 从小智 v1.5.0 开始又不再使用唤醒后等待响应了，而是又变回了 detect > start。所以在 start 接收后处理用户的语音。
+
+//        else if (dataPacket.isStateDetect()) {
+//            UdpClientContext context = udpClientContextHolder.get(sessionId);
+//            if (null == context) {
+//                context = createIfAbsent(udpHello);
+//            }
+//
+//            // 如果是唤醒词唤起的，就不需要处理 VAD了。
+//            String text = dataPacket.getText();
+//
+//            // 发送 STT 数据
+//            DataPacket stt = DataPacket.builder().type(MessageType.STT.getValue()).text(text).sessionId(sessionId).build();
+//            eventPark.post(new P2pMessageEvent(this, context, stt));
+//
+//            // 发送 STT 事件
+//            eventPark.post(new Speech2TextSuccessEvent(this, context, udpHello, text));
+//        }
 
         return null;
     }

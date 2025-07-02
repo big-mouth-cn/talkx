@@ -49,5 +49,6 @@ public class OtaResponse {
     public static class Activation {
         private String message;
         private String code;
+        private String challenge;
     }
 }

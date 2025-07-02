@@ -1,14 +1,5 @@
 [
   {
-    "name": "TalkX-内置声音",
-    "platformType": "talkx",
-    "role": "talkx_default_role",
-    "languages": [
-      "中文"
-    ],
-    "demoUrl": "https://lf3-static.bytednsdoc.com/obj/eden-cn/lm_hz_ihsph/ljhwZthlaukjlkulzlp/portal/bigtts/%E6%B9%BE%E6%B9%BE%E5%B0%8F%E4%BD%95.mp3"
-  },
-  {
     "name": "爽快思思/Skye",
     "platformType": "bytedance",
     "role": "zh_female_shuangkuaisisi_moon_bigtts",

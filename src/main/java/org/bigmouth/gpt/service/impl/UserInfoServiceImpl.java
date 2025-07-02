@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bigmouth.gpt.entity.AiModel;
 import org.bigmouth.gpt.entity.User;
 import org.bigmouth.gpt.entity.request.UserUpdateRequest;
-import org.bigmouth.gpt.service.FileUploadService;
 import org.bigmouth.gpt.service.IAiModelService;
 import org.bigmouth.gpt.service.IUserInfoService;
 import org.bigmouth.gpt.service.IUserService;
@@ -30,13 +29,11 @@ public class UserInfoServiceImpl implements IUserInfoService {
     private final Fetcher fetcher;
     private final IUserService userService;
     private final IAiModelService aiModelService;
-    private final FileUploadService fileUploadService;
 
-    public UserInfoServiceImpl(Fetcher fetcher, IUserService userService, IAiModelService aiModelService, FileUploadService fileUploadService) {
+    public UserInfoServiceImpl(Fetcher fetcher, IUserService userService, IAiModelService aiModelService) {
         this.fetcher = fetcher;
         this.userService = userService;
         this.aiModelService = aiModelService;
-        this.fileUploadService = fileUploadService;
     }
 
     @Override

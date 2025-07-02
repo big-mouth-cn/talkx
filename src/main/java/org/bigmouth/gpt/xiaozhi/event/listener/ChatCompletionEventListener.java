@@ -20,17 +20,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.bigmouth.gpt.ai.ChatServiceFactory;
 import org.bigmouth.gpt.ai.agent.AgentFactory;
-import org.bigmouth.gpt.ai.entity.ApiKey;
-import org.bigmouth.gpt.ai.entity.ChatServiceArgument;
-import org.bigmouth.gpt.ai.entity.GptRole;
-import org.bigmouth.gpt.ai.entity.Message;
+import org.bigmouth.gpt.ai.entity.*;
 import org.bigmouth.gpt.autoconfigure.OpenAiServiceAutoConfiguration;
 import org.bigmouth.gpt.entity.*;
 import org.bigmouth.gpt.exceptions.AiStatusException;
-import org.bigmouth.gpt.service.IAiModelService;
-import org.bigmouth.gpt.service.IDeviceService;
-import org.bigmouth.gpt.service.ISessionMessageService;
-import org.bigmouth.gpt.service.IUserService;
+import org.bigmouth.gpt.service.*;
 import org.bigmouth.gpt.utils.Constants;
 import org.bigmouth.gpt.xiaozhi.audio.AudioCodec;
 import org.bigmouth.gpt.xiaozhi.audio.OpusEncoderUtils;
@@ -51,7 +45,6 @@ import org.bigmouth.gpt.xiaozhi.udp.AudioResponseSequence;
 import org.bigmouth.gpt.xiaozhi.udp.UdpClientContext;
 import org.springframework.context.annotation.Configuration;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +74,7 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
     private final AgentFactory agentFactory;
     private final IAiModelService aiModelService;
     private final MemoryServiceFactory memoryServiceFactory;
+    private final IFriendService friendService;
 
     @Override
     @Subscribe
@@ -187,33 +181,40 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
         AiModel aiModel = null;
         ApiKey apiKey = null;
         UserFriendMediaConfig userFriendMediaConfig = context.getUserFriendMediaConfig();
-        if (null != userFriendMediaConfig) {
-            if (Objects.equals(Constants.YES, userFriendMediaConfig.getCustomModel())) {
-                aiModel = new AiModel()
-                        .setPlatformType(Constants.AiPlatform.PLATFORM_TYPE_OPENAI)
-                        .setModelName(userFriendMediaConfig.getLlmModel())
-                        .setModelGroup(1)
-                        .setRequestUrl(user.getProxyBaseUrl())
-                        .setMaxToken(Integer.MAX_VALUE)
-                        .setInputPrice(BigDecimal.ZERO).setCachedPrice(BigDecimal.ZERO).setOutPrice(BigDecimal.ZERO)
-                        .setSettleCurrency(2)
-                        .setCoinCostPer(BigDecimal.ZERO).setInputCoins(BigDecimal.ZERO).setOutputCoins(BigDecimal.ZERO)
-                        .setIsSupportTool(userFriendMediaConfig.getIsSupportTool());
-                apiKey = new ApiKey()
-                        .setUserPrivate(true)
-                        .setApiUrl(userFriendMediaConfig.getProxyBaseUrl())
-                        .setApiKey(userFriendMediaConfig.getApiKey());
-            } else {
-                String modelName = Optional.ofNullable(userFriendMediaConfig.getLlmModel()).orElse(user.getModel());
-                aiModel = aiModelService.get(modelName);
-            }
-        } else {
-            aiModel = aiModelService.get(xiaozhiConfig.getDefaultLlmModel());
+        if ((null != userFriendMediaConfig) && userFriendMediaConfig.isUseCustomModel()) {
+            // 优先自定义模型
+            String llmModel = userFriendMediaConfig.getLlmModel();
+            String proxyBaseUrl = user.getProxyBaseUrl();
+            Integer isSupportTool = userFriendMediaConfig.getIsSupportTool();
+            aiModel = AiModel.ofBasic(llmModel, proxyBaseUrl, isSupportTool);
+            apiKey = new ApiKey()
+                    .setUserPrivate(true)
+                    .setApiUrl(userFriendMediaConfig.getProxyBaseUrl())
+                    .setApiKey(userFriendMediaConfig.getApiKey());
         }
-
+        if (null == aiModel) {
+            // 不是自定义模型
+            Friend friend = friendService.getByRoleType(roleType);
+            if (friend.isAgentFriend()) {
+                // 如果是阿里云百炼应用，那么根据 workspace_id 和 app_id 来获取对应的模型。
+                String modelName = friend.getAgentSpecialModelName();
+                aiModel = aiModelService.get(modelName);
+                if (Objects.isNull(aiModel)) {
+                    // 如果没有配置对应的模型，那么使用一个空的模型。
+                    aiModel = AiModel.ofBasic(friend.getAgentImplementAiPlatformType(), modelName, null, Constants.NO);
+                }
+            }
+        }
+        if (null == aiModel) {
+            String modelName = Optional.ofNullable(userFriendMediaConfig)
+                    .map(UserFriendMediaConfig::getLlmModel)
+                    .orElse(xiaozhiConfig.getDefaultLlmModel());
+            aiModel = aiModelService.get(modelName);
+        }
         if (null == aiModel) {
             throw new AiStatusException(String.format("模型[%s]已经下线了，请切换到其他模型。", user.getModel()));
         }
+        log.info("Select model: {}", aiModel.getModelName());
         boolean isSupportTool = Objects.equals(aiModel.getIsSupportTool(), Constants.YES);
 
         List<ChatTool> chatTools = Lists.newArrayList();
@@ -298,25 +299,37 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
                         }
                     }
                 })
-                .flushRunnable(() -> {})
-                .clientAbortExceptionStringBiConsumer((e, s) -> {})
-                .complete((systemPrompt, completion) -> {
-                    // 处理剩余的累积内容
-                    if (accumulatedContent.length() > 0) {
-                        String segment = accumulatedContent.toString();
-                        accumulatedContent.setLength(0);
+                .complete(new CompleteConsumer() {
+                    @Override
+                    public void accept(List<Message> messages) {
+                        // 处理剩余的累积内容
+                        if (accumulatedContent.length() > 0) {
+                            String segment = accumulatedContent.toString();
+                            accumulatedContent.setLength(0);
 
-                        sendSegmentAudio2Client(segment, context);
+                            sendSegmentAudio2Client(segment, context);
+                        }
+
+                        String completion = null;
+
+                        // 从 messages 从后往前查到第一个 assistant role的消息为止
+                        for (int i = messages.size() - 1; i >= 0; i--) {
+                            Message message = messages.get(i);
+                            if (message.getRole().equals(GptRole.ASSISTANT.getName())) {
+                                completion = message.getContent();
+                                break;
+                            }
+                        }
+
+                        ChatCompleteEntity chatCompleteEntity = ChatCompleteEntity.builder()
+                                .sessionId(sessionId)
+                                .session(session)
+                                .messages(messages)
+                                .userPrompt(text)
+                                .completion(completion)
+                                .build();
+                        chatCompleteEndHandler.handle(chatCompleteEntity);
                     }
-
-                    ChatCompleteEntity chatCompleteEntity = ChatCompleteEntity.builder()
-                            .sessionId(sessionId)
-                            .session(session)
-                            .systemPrompt(systemPrompt)
-                            .userPrompt(text)
-                            .completion(completion)
-                            .build();
-                    chatCompleteEndHandler.handle(chatCompleteEntity);
                 })
                 .chatTools(chatTools)
                 .functionExecutorManager(functionExecutorManager)
@@ -345,7 +358,7 @@ public class ChatCompletionEventListener implements EventListener<Speech2TextSuc
                         return systemPrompt.toString();
                     }
                 })
-                .xiaozhiIotFunctionExecutor(new Function<ChatToolCall, ToolMessage>() {
+                .customFunctionExecutor(new Function<ChatToolCall, ToolMessage>() {
                     @Override
                     public ToolMessage apply(ChatToolCall chatToolCall) {
                         // 发送 IoT 命令

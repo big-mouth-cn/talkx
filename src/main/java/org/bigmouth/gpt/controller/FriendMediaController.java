@@ -11,19 +11,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bigmouth.gpt.ApplicationConfig;
-import org.bigmouth.gpt.entity.AiModel;
-import org.bigmouth.gpt.entity.User;
-import org.bigmouth.gpt.entity.UserFriend;
-import org.bigmouth.gpt.entity.UserFriendMediaConfig;
+import org.bigmouth.gpt.entity.*;
 import org.bigmouth.gpt.entity.request.TestModelRequest;
 import org.bigmouth.gpt.entity.request.UpdateMediaConfigRequest;
 import org.bigmouth.gpt.entity.response.AudioConfigVo;
 import org.bigmouth.gpt.entity.response.UserFriendMediaConfigVo;
 import org.bigmouth.gpt.interceptor.ContextFactory;
-import org.bigmouth.gpt.service.IAiModelService;
-import org.bigmouth.gpt.service.IUserFriendMediaConfigService;
-import org.bigmouth.gpt.service.IUserFriendService;
-import org.bigmouth.gpt.service.IUserService;
+import org.bigmouth.gpt.service.*;
 import org.bigmouth.gpt.utils.Constants;
 import org.bigmouth.gpt.utils.ResourceFileUtils;
 import org.bigmouth.gpt.xiaozhi.config.XiaozhiConfig;
@@ -51,6 +45,7 @@ public class FriendMediaController {
 
     private final XiaozhiConfig xiaozhiConfig;
     private final IUserFriendMediaConfigService userFriendMediaConfigService;
+    private final IFriendService friendService;
     private final IUserFriendService userFriendService;
     private final IUserService userService;
     private final IAiModelService aiModelService;
@@ -64,8 +59,9 @@ public class FriendMediaController {
                 .eq(UserFriendMediaConfig::getUserId, user.getId())
                 .eq(UserFriendMediaConfig::getUserFriendId, userFriendId)
                 .one();
+        UserFriend userFriend = userFriendService.getById(userFriendId);
+        Friend friend = friendService.getById(userFriend.getFriendId());
         if (null == config) {
-            UserFriend userFriend = userFriendService.getById(userFriendId);
             AudioConfigVo defConfig = userFriendMediaConfigService.getDefConfig(userFriend.getRoleType());
             config = new UserFriendMediaConfig();
             if (null != defConfig) {
@@ -80,7 +76,7 @@ public class FriendMediaController {
             Integer isSupportTool = Optional.ofNullable(aiModelService.get(model)).map(AiModel::getIsSupportTool).orElse(Constants.NO);
             config.setIsSupportTool(isSupportTool);
         }
-        res.setUserFriendMediaConfig(config).setUser(user);
+        res.setUserFriendMediaConfig(config).setUser(user).setFriendVo(FriendVo.of(friend, userFriend));
         return ResponseEntity.ok(res);
     }
 
@@ -149,8 +145,7 @@ public class FriendMediaController {
         Duration timeout = Duration.ofMinutes(5);
         String apiKey = request.getApiKey();
         String proxyBaseUrl = request.getProxyBaseUrl();
-        String baseUrl = UriComponentsBuilder.fromUriString(proxyBaseUrl)
-                .replacePath("/v1/")
+        String baseUrl = UriComponentsBuilder.fromUriString(proxyBaseUrl.replace("chat/completions", ""))
                 .build()
                 .toString();
         OpenAiService openAiService = new OpenAiService(apiKey, timeout, baseUrl);

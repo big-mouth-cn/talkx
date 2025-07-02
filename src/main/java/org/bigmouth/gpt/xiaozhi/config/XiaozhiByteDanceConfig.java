@@ -18,4 +18,8 @@ public class XiaozhiByteDanceConfig {
     private int speechPoolMaxTotal = 500;
     private int speechPoolMaxIdle = 100;
     private int speechPoolMinIdle = 10;
+
+    public boolean isDisable() {
+        return (ttsUrl == null || ttsUrl.isEmpty() || appId == null || appId.isEmpty() || accessToken == null || accessToken.isEmpty());
+    }
 }

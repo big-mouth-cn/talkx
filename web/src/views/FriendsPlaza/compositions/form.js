@@ -11,9 +11,11 @@ export const SourceType = {
 }
 
 export const defaultFormData = {
+    userFriendId: 0,
     avatar: default_friend_avatar,
     cssAvatar: "",
     name: "",
+    friendType: 1, // 新增类型字段，默认为基础对话
     tag: "",
     intro: "",
     welcome: "",
@@ -22,6 +24,12 @@ export const defaultFormData = {
     messageContextSize: 32,
     friendSource: SourceType.created,  
     conversationStart: [''],
+    aliyunDashscopeWorkspaceId: "",
+    aliyunDashscopeAppId: "",
+    aliyunDashscopeApiKey: "",
+    cozeBotId: "",
+    cozeAccessToken: "",
+    variables: "",
     openaiRequestBody: {
         maxTokens: 1000,
         temperature: 1.0,
@@ -102,7 +110,27 @@ export const rules = {
         required: true,
         message: ' ',
         trigger: 'blur'
-    }
+    },
+    aliyunDashscopeWorkspaceId: {
+        required: () => formData.value.friendType === 3,
+        message: ' ',
+        trigger: 'blur'
+    },
+    aliyunDashscopeAppId: {
+        required: () => formData.value.friendType === 3,
+        message: ' ',
+        trigger: 'blur'
+    },
+    cozeBotId: {
+        required: () => formData.value.friendType === 4 || formData.value.friendType === 5,
+        message:'',
+        trigger: 'blur'
+    },
+    cozeAccessToken: {
+        required: () => formData.value.friendType === 4 || formData.value.friendType === 5,
+        message:'',
+        trigger: 'blur'
+    },
 }
 
 export const formDataClear = () => {

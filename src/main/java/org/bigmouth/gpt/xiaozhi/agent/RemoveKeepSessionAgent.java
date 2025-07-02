@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
  * @author Allen Hu
  * @date 2025/3/5
  */
-@Configuration
+@Deprecated
+//@Configuration
 public class RemoveKeepSessionAgent implements Agent<RemoveKeepSessionAgent.RemoveSessionRequest> {
 
     private final UdpClientContextHolder udpClientContextHolder;

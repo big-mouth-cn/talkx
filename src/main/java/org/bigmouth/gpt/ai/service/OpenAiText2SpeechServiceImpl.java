@@ -13,7 +13,7 @@ import org.apache.http.util.EntityUtils;
 import org.bigmouth.gpt.Application;
 import org.bigmouth.gpt.ApplicationConfig;
 import org.bigmouth.gpt.ai.Text2SpeechService;
-import org.bigmouth.gpt.ai.entity.Handler;
+import org.bigmouth.gpt.ai.entity.SimpleHandler;
 import org.bigmouth.gpt.ai.entity.voice.Text2SpeechArgument;
 import org.bigmouth.gpt.ai.entity.voice.Tts1Request;
 import org.bigmouth.gpt.exceptions.AiAccountException;
@@ -100,9 +100,9 @@ public class OpenAiText2SpeechServiceImpl implements Text2SpeechService {
                     outputStream.write(buffer, 0, read);
                 }
                 outputStream.flush();
-                Handler completeRunnable = argument.getCompleteRunnable();
+                SimpleHandler completeRunnable = argument.getCompleteRunnable();
                 if (Objects.nonNull(completeRunnable)) {
-                    completeRunnable.handle();
+                    completeRunnable.execute();
                 }
             } else {
                 res = EntityUtils.toByteArray(entity);

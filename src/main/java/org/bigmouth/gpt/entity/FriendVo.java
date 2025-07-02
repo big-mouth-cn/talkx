@@ -8,7 +8,6 @@ import org.bigmouth.gpt.utils.Constants;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author huxiao
@@ -88,6 +87,11 @@ public class FriendVo {
      */
     private String tag;
 
+    /**
+     * 固定模型
+     */
+    private String fixedModel;
+
     // --------- other property ------- .//
 
     /**
@@ -106,6 +110,36 @@ public class FriendVo {
      * 快速开始
      */
     private List<String> conversationStart;
+
+    /**
+     * 阿里云百炼工作空间ID
+     */
+    private String aliyunDashscopeWorkspaceId;
+
+    /**
+     * 阿里云百炼应用ID
+     */
+    private String aliyunDashscopeAppId;
+
+    /**
+     * 阿里云百炼应用密钥
+     */
+    private String aliyunDashscopeApiKey;
+
+    /**
+     * Coze 智能体ID
+     */
+    private String cozeBotId;
+
+    /**
+     * Coze 智能体访问令牌
+     */
+    private String cozeAccessToken;
+
+    /**
+     * 自定义变量定义，一般用于阿里云百炼等平台调用时的传参，默认是一个JSON格式的数据。
+     */
+    private String variables;
 
     public static FriendVo of(Friend friend) {
         FriendVo vo = new FriendVo()
@@ -153,9 +187,19 @@ public class FriendVo {
         vo.setCommentTags(tags);
 
         String fixedModel = friend.getFixedModel();
+        vo.setFixedModel(fixedModel);
         vo.setShowModelSelect(StringUtils.isBlank(fixedModel));
 
         vo.setConversationStart(friend.getConversactionStartSet());
+
+        vo.setAliyunDashscopeWorkspaceId(friend.getAliyunDashscopeWorkspaceId())
+                .setAliyunDashscopeAppId(friend.getAliyunDashscopeAppId())
+                .setAliyunDashscopeApiKey(friend.getAliyunDashscopeApiKey());
+
+        vo.setCozeAccessToken(friend.getCozeAccessToken())
+                .setCozeBotId(friend.getCozeBotId());
+
+        vo.setVariables(friend.getVariables());
     }
 
     @Data

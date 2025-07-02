@@ -5,13 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.catalina.connector.ClientAbortException;
 import org.bigmouth.gpt.ai.entity.ApiKey;
-import org.bigmouth.gpt.ai.entity.Handler;
+import org.bigmouth.gpt.ai.entity.SimpleHandler;
 import org.bigmouth.gpt.entity.User;
 
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * @author allen
@@ -47,7 +46,7 @@ public class Text2SpeechArgument {
     /**
      * 结束流处理逻辑
      */
-    private Handler completeRunnable;
+    private SimpleHandler completeRunnable;
     /**
      * 用户取消接口
      */

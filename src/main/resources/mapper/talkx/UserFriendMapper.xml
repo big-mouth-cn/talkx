@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.bigmouth.gpt.mapper.talkx.UserFriendMapper">
+    <update id="updateSystemPrompt">
+        UPDATE user_friend SET system_prompt = #{systemPrompt} WHERE friend_id = #{friendId}
+    </update>
 
+    <select id="getUserIdByFriendId" resultType="long">
+        SELECT user_id FROM user_friend WHERE friend_id = #{friendId}
+    </select>
 </mapper>

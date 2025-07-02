@@ -20,4 +20,9 @@ public class XiaozhiConfig {
      * 默认模型
      */
     private String defaultLlmModel = "qwen-turbo";
+
+    /**
+     * 是否使用redis缓存音频队列
+     */
+    private boolean enableRedisAudioQueue = false;
 }

@@ -12,12 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bigmouth.gpt.ApplicationConfig;
-import org.bigmouth.gpt.ai.entity.Model;
 import org.bigmouth.gpt.entity.User;
 import org.bigmouth.gpt.event.NewUserRegisterEvent;
 import org.bigmouth.gpt.mapper.talkx.UserMapper;
 import org.bigmouth.gpt.service.IUserService;
 import org.bigmouth.gpt.service.InviteCodeService;
+import org.bigmouth.gpt.utils.Constants;
 import org.bigmouth.gpt.utils.RedisKeys;
 import org.bigmouth.gpt.utils.UserTokenUtils;
 import org.springframework.stereotype.Service;
@@ -120,13 +120,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 保存token
         String token = UUIDHelper.generate();
-        this.saveUserToken(token, exists, Duration.ofDays(30));
+        this.saveUserToken(token, exists, Constants.DEFAULT_SESSION_EXPIRE_TIME);
         return token;
     }
 
     @Override
     public User getUserFromToken(String token) {
-        return this.getUser(token);
+        return getUserFromToken(token, true);
+    }
+
+    @Override
+    public User getUserFromToken(String token, boolean refreshExpireTime) {
+        User user = this.getUser(token);
+        if (refreshExpireTime && Objects.nonNull(user)) {
+            this.refreshExpireTime(token);
+        }
+        return user;
     }
 
     @Override
@@ -155,7 +164,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         String token = UserTokenUtils.getToken();
         User userFromToken = this.getUserFromToken(token);
         User user = super.getById(userFromToken.getId());
-        this.saveUserToken(token, user, Duration.ofDays(30));
+        this.saveUserToken(token, user, Constants.DEFAULT_SESSION_EXPIRE_TIME);
     }
 
     @Override
@@ -217,6 +226,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     private User getUser(String token) {
         return fetcher.fetch(stringUserTokenCache(token), User.class);
+    }
+
+    private void refreshExpireTime(String token) {
+        updater.expire(stringUserTokenCache(token), (int) Constants.DEFAULT_SESSION_EXPIRE_TIME.getSeconds());
     }
 
     private void saveUserToken(String token, User user, Duration expired) {

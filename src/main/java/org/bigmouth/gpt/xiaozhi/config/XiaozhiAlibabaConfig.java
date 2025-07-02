@@ -17,4 +17,8 @@ public class XiaozhiAlibabaConfig {
     private int cosyVoicePoolMaxTotal = 500;
     private int cosyVoicePoolMaxIdle = 100;
     private int cosyVoicePoolMinIdle = 10;
+
+    public boolean isDisable() {
+        return (dashscopeApiKey == null || dashscopeApiKey.isEmpty());
+    }
 }

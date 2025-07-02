@@ -12,6 +12,7 @@ import org.bigmouth.gpt.xiaozhi.entity.DataPacket;
 import org.bigmouth.gpt.xiaozhi.entity.MessageType;
 import org.bigmouth.gpt.xiaozhi.handler.MessageHandler;
 import org.bigmouth.gpt.xiaozhi.handler.MessageHandlerFactory;
+import org.bigmouth.gpt.xiaozhi.mqtt.FrontEndHolder;
 
 /**
  * @author Allen Hu
@@ -23,13 +24,15 @@ public class MqttCloudConsumerMessageListener implements MessageListener {
     private final XiaozhiMqttConfig xiaozhiMqttConfig;
     private final MessageHandlerFactory messageHandlerFactory;
     private final MqttCloudProducer mqttCloudProducer;
+    private final FrontEndHolder frontEndHolder;
 
     public MqttCloudConsumerMessageListener(XiaozhiMqttConfig xiaozhiMqttConfig,
                                             MessageHandlerFactory messageHandlerFactory,
-                                            MqttCloudProducer mqttCloudProducer) {
+                                            MqttCloudProducer mqttCloudProducer, FrontEndHolder frontEndHolder) {
         this.xiaozhiMqttConfig = xiaozhiMqttConfig;
         this.messageHandlerFactory = messageHandlerFactory;
         this.mqttCloudProducer = mqttCloudProducer;
+        this.frontEndHolder = frontEndHolder;
     }
 
     @Override
@@ -43,41 +46,44 @@ public class MqttCloudConsumerMessageListener implements MessageListener {
 
         try {
             DataPacket dataPacket = JSONObject.parseObject(json, DataPacket.class);
-            MessageType messageType = dataPacket.of();
-            MessageHandler messageHandler = messageHandlerFactory.get(messageType);
-            if (messageHandler == null) {
-                log.warn("No message handler found for message type: {}", messageType);
-                return;
-            }
-            String p2pTopic = createP2pTopic(clientId);
+            String p2pTopic = xiaozhiMqttConfig.createP2pTopic(clientId);
             dataPacket.setClientId(clientId);
             dataPacket.setP2pTopic(p2pTopic);
 
-            DataPacket response = messageHandler.handle(dataPacket);
-            if (response == null) {
-                return;
+            String frontEndClientId = frontEndHolder.get(clientId);
+            if (null != frontEndClientId) {
+                // 转发给前置机
+                String frontP2pClient = xiaozhiMqttConfig.createFrontP2pClient(frontEndClientId);
+                mqttCloudProducer.sendMessageQuiet(frontP2pClient, JsonHelper.convert2bytes(dataPacket));
+                log.info("Send message to frontEndClientId: {} - {}", frontP2pClient, dataPacket);
+            } else {
+                MessageType messageType = dataPacket.of();
+                MessageHandler messageHandler = messageHandlerFactory.get(messageType);
+                if (messageHandler == null) {
+                    log.warn("No message handler found for message type: {}", messageType);
+                    return;
+                }
+
+                DataPacket response = messageHandler.handle(dataPacket);
+                if (response == null) {
+                    return;
+                }
+
+                mqttCloudProducer.sendMessage(p2pTopic, JsonHelper.convert2bytes(response), new SendCallback() {
+                    @Override
+                    public void onSuccess(String msgId) {
+                    }
+
+                    @Override
+                    public void onFail() {
+                        log.error("Failed to send message: {} - {}", p2pTopic, response);
+                    }
+                });
             }
-
-            mqttCloudProducer.sendMessage(p2pTopic, JsonHelper.convert2bytes(response), new SendCallback() {
-                @Override
-                public void onSuccess(String msgId) {
-                }
-
-                @Override
-                public void onFail() {
-                    log.error("Failed to send message: {} - {}", p2pTopic, response);
-                }
-            });
         } catch (IllegalArgumentException | JSONException e) {
             log.error("Failed to parse message: {}", json, e);
         } catch (Exception e) {
             log.error("Failed to process message: {}", json, e);
         }
-    }
-
-    public String createP2pTopic(String clientId) {
-        // devices/p2p/GID_test@@@a0_85_e3_e1_55_34
-        String topicOfDevice = xiaozhiMqttConfig.getTopicOfDevice();
-        return String.format("%s/p2p/%s", topicOfDevice, clientId);
     }
 }

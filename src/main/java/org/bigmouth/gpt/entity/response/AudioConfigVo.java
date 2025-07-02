@@ -1,6 +1,7 @@
 package org.bigmouth.gpt.entity.response;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 import org.bigmouth.gpt.xiaozhi.tts.TtsPlatformType;
 
 /**
@@ -10,6 +11,7 @@ import org.bigmouth.gpt.xiaozhi.tts.TtsPlatformType;
  * @since 2025-02-28
  */
 @Data
+@Accessors(chain = true)
 public class AudioConfigVo {
 
     /**

@@ -15,6 +15,8 @@ public interface Constants {
 
     Duration DEFAULT_TIMEOUT = Duration.ofMinutes(20);
 
+    Duration DEFAULT_SESSION_EXPIRE_TIME = Duration.ofDays(30);
+
     String HEADER_SESSIONID = "talkx-sessionid";
     String HEADER_MSGID = "talkx-msgid";
 
@@ -68,8 +70,18 @@ public interface Constants {
      * Ai平台常量设置
      */
     interface AiPlatform {
+        /**
+         * OpenAI协议平台
+         */
         int PLATFORM_TYPE_OPENAI = 1;
-        int PLATFORM_TYPE_XINGHUO = 2;
+        /**
+         * 阿里云百炼平台
+         */
+        int PLATFORM_TYPE_ALIYUN_DASHSCOPE = 2;
+        /**
+         * 扣子
+         */
+        int PLATFORM_TYPE_COZE = 3;
 
         int MODEL_GROUP_GPT3_5 = 1;
         int MODEL_GROUP_GPT4 = 2;
@@ -207,5 +219,12 @@ public interface Constants {
 
         int FRIEND_TYPE_BASIC = 1;
         int FRIEND_TYPE_GPTS = 2;
+        /**
+         * 阿里云百炼应用
+         */
+        int FRIEND_TYPE_ALIYUN_DASHSCOPE_APP = 3;
+        int COZE_CN = 4;
+        int COZE_COM = 5;
+
     }
 }

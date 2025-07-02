@@ -3,6 +3,7 @@ package org.bigmouth.gpt.ai.service;
 import com.alibaba.fastjson.JSONObject;
 import com.bxm.warcar.integration.eventbus.EventPark;
 import com.bxm.warcar.utils.JsonHelper;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.theokanning.openai.OpenAiHttpException;
@@ -163,7 +164,7 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
             ChatCompletionRequest requestBody = OpenAiServiceAutoConfiguration.MAPPER.readValue(toJSONString(openApiRequest), ChatCompletionRequest.class);
 
             List<ChatMessage> chatMessages = requestBody.getMessages();
-            Function<ChatToolCall, ToolMessage> xiaozhiIotFunctionExecutor = argument.getXiaozhiIotFunctionExecutor();
+            Function<ChatToolCall, ToolMessage> customFunctionExecutor = argument.getCustomFunctionExecutor();
             FunctionExecutorManager functionExecutorManager = argument.getFunctionExecutorManager();
             List<ChatTool> chatTools = argument.getChatTools();
             if (!CollectionUtils.isEmpty(chatTools) && isSupportTool) {
@@ -181,6 +182,8 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
 //            log.info("request >>> {}", OpenAiServiceAutoConfiguration.MAPPER.writeValueAsString(requestBody));
 
             AtomicBoolean firstPacket = new AtomicBoolean(true);
+            AtomicBoolean firstReasoning = new AtomicBoolean(false);
+            AtomicBoolean firstContent = new AtomicBoolean(false);
             while (true) {
                 Flowable<ChatCompletionChunk> streamedChatCompletion = openAiService.streamChatCompletion(requestBody);
 
@@ -203,12 +206,20 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
                                 }
                                 AssistantMessage messageChunk = chatMessageAccumulator.getMessageChunk();
                                 if (Objects.nonNull(messageChunk)) {
+                                    String reasoningContent = messageChunk.getReasoningContent();
+                                    if (StringUtils.isNotBlank(reasoningContent)) {
+                                        if (firstReasoning.compareAndSet(false, true)) {
+                                            writeAndFlushContent(argument, msgBuilder, "<think>\n");
+                                        }
+                                        writeAndFlushContent(argument, msgBuilder, reasoningContent);
+                                    }
+
                                     String source = messageChunk.getContent();
-                                    if (org.apache.commons.lang3.StringUtils.isNotEmpty(source)) {
-                                        byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
-                                        msgBuilder.append(source);
-                                        argument.getWriteConsumer().handle(bytes);
-                                        argument.getFlushRunnable().handle();
+                                    if (StringUtils.isNotEmpty(source)) {
+                                        if (firstContent.compareAndSet(false, true) && firstReasoning.get()) {
+                                            writeAndFlushContent(argument, msgBuilder, "\n</think>\n");
+                                        }
+                                        writeAndFlushContent(argument, msgBuilder, source);
                                     }
                                 }
                             }
@@ -219,6 +230,8 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
                                 AiAccountException exception = new AiAccountException(e.getMessage(), ak);
                                 exception.setSc(e.statusCode);
                                 throw exception;
+                            } else if (throwable instanceof JsonParseException) {
+                                throw new AiNetworkException(throwable);
                             } else {
                                 throw new IOException(throwable);
                             }
@@ -235,19 +248,14 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
                     break;
                 }
 
-                List<ToolMessage> executed = this.executeFunctions(functionExecutorManager, xiaozhiIotFunctionExecutor, functionCalls);
+                List<ToolMessage> executed = this.executeFunctions(functionExecutorManager, customFunctionExecutor, functionCalls);
                 chatMessages.addAll(executed);
             }
 
         } catch (Exception e) {
             state.setThrowable(e);
 
-            if (e instanceof ClientAbortException) {
-                BiConsumer<ClientAbortException, String> clientAbortExceptionStringBiConsumer = argument.getClientAbortExceptionStringBiConsumer();
-                if (Objects.nonNull(clientAbortExceptionStringBiConsumer)) {
-                    clientAbortExceptionStringBiConsumer.accept((ClientAbortException) e, msgBuilder.toString());
-                }
-            } else if (e instanceof IOException) {
+            if (e instanceof IOException || e instanceof AiNetworkException) {
                 throw new AiNetworkException(e);
             } else if (e instanceof AiAccountException) {
                 throw ((AiAccountException) e);
@@ -262,27 +270,22 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
                 throw new RuntimeException(e);
             }
         } finally {
-            Handler4 complete = argument.getComplete();
+            CompleteConsumer complete = argument.getComplete();
             if (Objects.nonNull(complete)) {
-                String systemPrompt = null;
-                Message message = openApiRequest.getMessages().get(0);
-                if (StringUtils.equals(message.getRole(), GptRole.SYSTEM.getName())) {
-                    systemPrompt = message.getContent();
-                }
-                complete.handle(systemPrompt, msgBuilder.toString());
+                List<Message> messages = openApiRequest.getMessages();
+                messages.add(new Message().setRole(GptRole.ASSISTANT.getName()).setContent(msgBuilder.toString()));
+                complete.accept(messages);
             }
 
             Throwable throwable = state.getThrowable();
             if (throwable == null || throwable instanceof ClientAbortException) {
                 // 发送请求完成的事件
                 ChatCompletionEvent.Parameter parameter = ChatCompletionEvent.Parameter.builder()
-                        .user(user)
-                        .prompt(prompt)
-                        .aiModel(aiModel)
-                        .apiKey(ak)
                         .completion(msgBuilder.toString())
                         .startNanoTime(state.getFirstByteTimeInNanoTime())
                         .usage(usage)
+                        .messages(openApiRequest.getMessages())
+                        .argument(argument)
                         .build();
                 eventPark.post(new ChatCompletionEvent(this, parameter));
                 if (log.isDebugEnabled()) {
@@ -292,12 +295,23 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
         }
     }
 
+    private void writeAndFlushContent(ChatServiceArgument argument, StringBuilder msgBuilder, String content) throws IOException {
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        msgBuilder.append(content);
+        ByteWriter<byte[]> writeConsumer = argument.getWriteConsumer();
+        if (null != writeConsumer) {
+            writeConsumer.write(bytes);
+        }
+        SimpleHandler flushRunnable = argument.getFlushRunnable();
+        if (null != flushRunnable) {
+            flushRunnable.execute();
+        }
+    }
+
     public static String toJSONString(OpenApiRequest request) {
         Model model = Model.ofName(request.getModel());
         if (Objects.isNull(model)) {
-//            log.warn("Unsupported model: {}, Just use gpt-all json format.", request.getModel());
-            // maybe is GPT-4-GIZMO-* or GPTs
-            return toGptAllJson(request);
+            return toGpt4VisionPreviewJson(request, model);
         }
         switch (model) {
             case GPT_4_ALL:
@@ -319,7 +333,7 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
         List<Message> messages = request.getMessages();
         for (Message message : messages) {
             List<AttachVo> attachments = message.getAttachments();
-            if (!CollectionUtils.isEmpty(attachments)) {
+            if (CollectionUtils.isNotEmpty(attachments)) {
                 StringBuilder att = new StringBuilder();
                 for (AttachVo attachment : attachments) {
                     String url = attachment.getUrl();
@@ -483,16 +497,6 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
      * @return Updated set of messages from ChatRequest.
      */
     private static List<Message> addSystemPromptMessage2FirstIndexIfExists(Prompt prompt, ChatRequest request) {
-//        String systemPrompt = prompt.getSystemPrompt();
-//        List<Message> messages = request.getMessages();
-//        if (StringUtils.isNotBlank(systemPrompt)) {
-//            systemPrompt = systemPrompt + "\n" +
-//                    (containsChinese(systemPrompt) ? Constants.SENSITIVE_WORDS_CN : Constants.SENSITIVE_WORDS_EN);
-//        } else {
-//            systemPrompt = Constants.SENSITIVE_WORDS_CN;
-//        }
-//        messages.add(0, new Message().setRole(GptRole.SYSTEM.getName()).setContent(systemPrompt));
-//        return messages;
         String systemPrompt = prompt.getSystemPrompt();
         List<Message> messages = request.getMessages();
         if (StringUtils.isNotBlank(systemPrompt)) {
@@ -516,11 +520,9 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
         if (Objects.isNull(messages)) {
             return Collections.emptyList();
         }
-        // Fixed 36 < n > 2
+        // Fixed n >= 2
         if (maxSize < 2) {
             maxSize = 2;
-        } else if (maxSize > 36) {
-            maxSize = 36;
         }
 
         // The repair value is in singular form.
@@ -542,60 +544,5 @@ public class OpenAiProtocolChatServiceImpl implements ChatService, Ordered, Open
             return null;
         }
         return string.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * 判断字符串中是否包含中文字符
-     *
-     * @param str 待判断的字符串
-     * @return 如果字符串中包含中文字符，则返回true；否则返回false
-     */
-    public static boolean containsChinese(String str) {
-        for (char c : str.toCharArray()) {
-            if (Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static class FlowableState {
-
-        /**
-         * 接收到第一个数据的时间
-         */
-        private long firstByteTimeInNanoTime;
-        private Throwable throwable;
-        private StringBuilder completion = new StringBuilder();
-
-        public void append(String str) {
-            completion.append(str);
-        }
-
-        public void initFirstByteTimeInNanoTime() {
-            if (this.firstByteTimeInNanoTime == 0) {
-                this.firstByteTimeInNanoTime = System.nanoTime();
-            }
-        }
-
-        public Throwable getThrowable() {
-            return throwable;
-        }
-
-        public boolean isOccurError() {
-            return throwable != null;
-        }
-
-        public StringBuilder getCompletion() {
-            return completion;
-        }
-
-        public void setThrowable(Throwable throwable) {
-            this.throwable = throwable;
-        }
-
-        public long getFirstByteTimeInNanoTime() {
-            return firstByteTimeInNanoTime;
-        }
     }
 }

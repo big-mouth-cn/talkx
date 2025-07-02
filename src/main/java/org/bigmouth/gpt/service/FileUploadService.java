@@ -9,6 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface FileUploadService {
 
+    FileUploadType of();
+
     String uploadImg(MultipartFile file);
 
     String uploadImg(MultipartFile file, String parentDir);

@@ -57,11 +57,16 @@ public class Application {
         if (StringUtils.isBlank(proxyBaseUrl)) {
             return requestUri;
         }
-        UriComponents proxy = UriComponentsBuilder.fromUriString(proxyBaseUrl).build();
-        return UriComponentsBuilder.fromUriString(requestUri)
-                .scheme(proxy.getScheme())
-                .host(proxy.getHost())
-                .port(proxy.getPort())
+        UriComponentsBuilder proxyUriBuilder = UriComponentsBuilder.fromUriString(proxyBaseUrl);
+        UriComponents proxy = proxyUriBuilder.build();
+        String path = proxy.getPath();
+        if (StringUtils.isBlank(path)) {
+            // 如果自定义的 path 是空的，那么就用默认的，否则用自定义的
+            UriComponents source = UriComponentsBuilder.fromUriString(requestUri).build();
+            path = Optional.ofNullable(source.getPath()).orElse(StringUtils.EMPTY);
+        }
+        return proxyUriBuilder
+                .replacePath(path)
                 .build()
                 .toString();
     }

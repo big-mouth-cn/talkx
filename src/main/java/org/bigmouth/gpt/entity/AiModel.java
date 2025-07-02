@@ -1,14 +1,16 @@
 package org.bigmouth.gpt.entity;
 
-import java.math.BigDecimal;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
-import java.io.Serializable;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.bigmouth.gpt.utils.Constants;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -33,7 +35,7 @@ public class AiModel implements Serializable {
     private Long id;
 
     /**
-     * 平台类型。1 OpenAI、2 星火
+     * 平台类型。1 OpenAI、2 阿里云百炼
      */
     private Integer platformType;
 
@@ -197,4 +199,25 @@ public class AiModel implements Serializable {
 
     public static final String MODIFY_TIME = "modify_time";
 
+    public static AiModel ofBasic(String modelName,
+                                  String requestUrl,
+                                  Integer isSupportTool) {
+        return ofBasic(Constants.AiPlatform.PLATFORM_TYPE_OPENAI, modelName, requestUrl, isSupportTool);
+    }
+
+    public static AiModel ofBasic(int platformType,
+                                  String modelName,
+                                  String requestUrl,
+                                  Integer isSupportTool) {
+        return new AiModel()
+                .setPlatformType(platformType)
+                .setModelName(modelName)
+                .setModelGroup(1)
+                .setRequestUrl(requestUrl)
+                .setMaxToken(Integer.MAX_VALUE)
+                .setInputPrice(BigDecimal.ZERO).setCachedPrice(BigDecimal.ZERO).setOutPrice(BigDecimal.ZERO)
+                .setSettleCurrency(2)
+                .setCoinCostPer(BigDecimal.ZERO).setInputCoins(BigDecimal.ZERO).setOutputCoins(BigDecimal.ZERO)
+                .setIsSupportTool(isSupportTool);
+    }
 }

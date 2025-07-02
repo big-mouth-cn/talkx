@@ -1,7 +1,6 @@
 package org.bigmouth.gpt.xiaozhi.udp;
 
 import cn.hutool.core.util.HexUtil;
-import com.bxm.warcar.integration.eventbus.EventPark;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -17,7 +16,6 @@ import org.bigmouth.gpt.xiaozhi.entity.UdpHello;
 import org.bigmouth.gpt.xiaozhi.handler.HelloMessageHandler;
 import org.bigmouth.gpt.xiaozhi.handler.ListenMessageHolder;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.Nullable;
 
 import java.net.InetSocketAddress;
 import java.time.LocalDateTime;
@@ -92,15 +90,9 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
                 return;
             }
 
-            UdpClientContext context = createIfAbsent(udpHello, new Consumer<String>() {
-                @Override
-                public void accept(String sessionId) {
-                    nettyUDPServer.loadClientAddressCache(sessionId);
-                }
-            });
-
             // 只有开始监听才生效
             if (listenDataPacket.isStateStart()) {
+                UdpClientContext context = createIfAbsent(udpHello);
                 DataPacket response = udpHello.getResponse();
                 Udp udp = response.getUdp();
                 String key = udp.getKey();
@@ -127,9 +119,14 @@ public class NettyChannelInboundHandler extends SimpleChannelInboundHandler<Data
         }
     }
 
-    public UdpClientContext createIfAbsent(UdpHello udpHello, @Nullable Consumer<String> ifAbsentHandler) {
+    public UdpClientContext createIfAbsent(UdpHello udpHello) {
         String sessionId = udpHello.getSessionId();
-        return udpClientContextBuilder.createIfAbsent(udpHello, ifAbsentHandler)
+        return udpClientContextBuilder.createIfAbsent(udpHello, new Consumer<String>() {
+                    @Override
+                    public void accept(String sessionId) {
+                        nettyUDPServer.loadClientAddressCache(sessionId);
+                    }
+                })
                 .setLastTimeOnReceiveAudio(LocalDateTime.now())
                 .setAudioResponseSender(bytes -> nettyUDPServer.sendMessage(bytes, sessionId));
     }

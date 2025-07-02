@@ -4,7 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bigmouth.gpt.ai.entity.Message;
 import org.bigmouth.gpt.entity.Session;
+
+import java.util.List;
 
 /**
  * @author Allen Hu
@@ -18,7 +21,7 @@ public class ChatCompleteEntity {
 
     private String sessionId;
     private Session session;
-    private String systemPrompt;
+    private List<Message> messages;
     private String userPrompt;
     private String completion;
 }

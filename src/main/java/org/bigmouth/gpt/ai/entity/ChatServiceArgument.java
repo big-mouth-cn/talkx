@@ -8,10 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.catalina.connector.ClientAbortException;
-import org.bigmouth.gpt.entity.AiModel;
-import org.bigmouth.gpt.entity.ChatRequest;
-import org.bigmouth.gpt.entity.Prompt;
-import org.bigmouth.gpt.entity.User;
+import org.bigmouth.gpt.entity.*;
+import org.springframework.lang.Nullable;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -33,6 +31,10 @@ public class ChatServiceArgument {
      * 用户信息，游客时是null
      */
     private User user;
+    /**
+     * 对应的好友信息，有可能是null
+     */
+    private Friend friend;
     /**
      * 模型配置信息
      */
@@ -56,18 +58,22 @@ public class ChatServiceArgument {
     /**
      * 写入流接口
      */
-    private Handler2<byte[]> writeConsumer;
+    @Nullable
+    private ByteWriter<byte[]> writeConsumer;
     /**
      * 刷新缓冲接口
      */
-    private Handler flushRunnable;
+    @Nullable
+    private SimpleHandler flushRunnable;
     /**
      * 完成接口
      */
-    private Handler4 complete;
+    @Nullable
+    private CompleteConsumer complete;
     /**
      * 用户取消接口
      */
+    @Nullable
     private BiConsumer<ClientAbortException, String> clientAbortExceptionStringBiConsumer;
     /**
      * Tools
@@ -82,7 +88,7 @@ public class ChatServiceArgument {
      */
     private Function<String, String> updateSystemPromptFunction;
     /**
-     * 小智IoT执行器
+     * 自定义IoT执行器
      */
-    private Function<ChatToolCall, ToolMessage> xiaozhiIotFunctionExecutor;
+    private Function<ChatToolCall, ToolMessage> customFunctionExecutor;
 }

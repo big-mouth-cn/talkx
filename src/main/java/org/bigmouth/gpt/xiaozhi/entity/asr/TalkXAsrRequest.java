@@ -13,6 +13,9 @@ public class TalkXAsrRequest {
     private String key;
     private String audioBase64;
 
+    public TalkXAsrRequest() {
+    }
+
     public TalkXAsrRequest(String key, byte[] bytes) {
         this.key = key;
         this.audioBase64 = Base64.encodeBase64String(bytes);

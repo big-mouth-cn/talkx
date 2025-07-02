@@ -2,10 +2,13 @@ package org.bigmouth.gpt.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.bigmouth.gpt.utils.Constants;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * <p>
@@ -105,4 +108,7 @@ public class UserFriendMediaConfig implements Serializable {
 
     public static final String MODIFY_TIME = "modify_time";
 
+    public boolean isUseCustomModel() {
+        return Objects.equals(Constants.YES, getCustomModel());
+    }
 }

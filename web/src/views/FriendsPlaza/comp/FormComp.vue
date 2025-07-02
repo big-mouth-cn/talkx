@@ -18,6 +18,14 @@
         placeholder=""
       />
     </n-form-item>
+    <n-form-item label="AI类型" path="type">
+      <n-select
+        class="tp_select"
+        v-model:value="formData.friendType"
+        :options="friendTypeOptions"
+        :disabled="formData.userFriendId"
+      />
+    </n-form-item>
     <n-form-item label="标签" path="tag">
       <n-select
         class="tp_select"
@@ -49,7 +57,9 @@
         <div class="desc">建立新话题页面所展示的招呼</div>
       </div>
     </n-form-item>
-    <n-form-item label="指令" path="systemPrompt">
+    <n-form-item label="指令" path="systemPrompt" 
+    v-if="formData.friendType === 1 
+          || (formData.friendType === 3 && formData.friendSource === SourceType.created)">
       <div class="item_contet">
         <n-input
           class="_input"
@@ -61,9 +71,10 @@
           placeholder=""
         />
         <div class="desc">
-          设置这个AI的系统指令（角色描述），通过
+          <div>设置这个AI的系统指令（角色描述），通过
           <span class="model_look" @click="modelLook">「这里」</span>
-          可以获取一些帮助
+          可以获取一些帮助</div>
+          <div v-if="formData.friendType === 3">当AI类型是阿里云百炼应用时，设置该指令将会覆盖应用在百炼后台已经配置的提示词。而且会同步更新其他用户已添加该AI的指令。</div>
         </div>
       </div>
     </n-form-item>
@@ -95,125 +106,127 @@
 
     <!-- <n-form-item label="模型设置" /> -->
     <div class="diver">模型设置</div>
+    <div>
+      <n-form-item class="modelSet" path="messageContextSize">
+        <template v-slot:label>
+          <span>{{ config.messageContextSize.label }}</span>
+          <Popover :text="config.messageContextSize.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            v-model:value="formData.messageContextSize"
+            v-bind="config.messageContextSize.attrs"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.messageContextSize"
+            @input="inputChange($event, 'messageContextSize')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+      <n-form-item class="modelSet" path="openaiRequestBody.maxTokens" v-if="formData.friendType === 1">
+        <template v-slot:label>
+          <span>{{ config.openaiRequestBody.maxTokens.label }}</span>
+          <Popover :text="config.openaiRequestBody.maxTokens.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            v-bind="config.openaiRequestBody.maxTokens.attrs"
+            v-model:value="formData.openaiRequestBody.maxTokens"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.openaiRequestBody.maxTokens"
+            @input="inputChange($event, 'openaiRequestBody.maxTokens')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+      <n-form-item class="modelSet" path="openaiRequestBody.temperature" v-if="formData.friendType === 1">
+        <template v-slot:label>
+          <span>{{ config.openaiRequestBody.temperature.label }}</span>
+          <Popover :text="config.openaiRequestBody.temperature.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            @update:value="temperatureUpdate"
+            v-bind="config.openaiRequestBody.temperature.attrs"
+            v-model:value="formData.openaiRequestBody.temperature"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.openaiRequestBody.temperature"
+            @input="inputChange($event, 'openaiRequestBody.temperature')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+      <n-form-item class="modelSet" path="openaiRequestBody.topP" v-if="formData.friendType === 1">
+        <template v-slot:label>
+          <span>{{ config.openaiRequestBody.topP.label }}</span>
+          <Popover :text="config.openaiRequestBody.topP.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            @update:value="topPUpdate"
+            v-bind="config.openaiRequestBody.topP.attrs"
+            v-model:value="formData.openaiRequestBody.topP"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.openaiRequestBody.topP"
+            @input="inputChange($event, 'openaiRequestBody.topP')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+      <n-form-item class="modelSet" path="openaiRequestBody.presencePenalty" v-if="formData.friendType === 1">
+        <template v-slot:label>
+          <span>{{ config.openaiRequestBody.presencePenalty.label }}</span>
+          <Popover :text="config.openaiRequestBody.presencePenalty.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            v-bind="config.openaiRequestBody.presencePenalty.attrs"
+            v-model:value="formData.openaiRequestBody.presencePenalty"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.openaiRequestBody.presencePenalty"
+            @input="inputChange($event, 'openaiRequestBody.presencePenalty')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+      <n-form-item class="modelSet" path="openaiRequestBody.frequencyPenalty" v-if="formData.friendType === 1">
+        <template v-slot:label>
+          <span>{{ config.openaiRequestBody.frequencyPenalty.label }}</span>
+          <Popover :text="config.openaiRequestBody.frequencyPenalty.popover" />
+        </template>
+        <div class="flex">
+          <n-slider
+            class="slider"
+            v-bind="config.openaiRequestBody.frequencyPenalty.attrs"
+            v-model:value="formData.openaiRequestBody.frequencyPenalty"
+          />
+          <n-input
+            class="input _input"
+            :value="formData.openaiRequestBody.frequencyPenalty"
+            @input="inputChange($event, 'openaiRequestBody.frequencyPenalty')"
+            placeholder=""
+          ></n-input>
+        </div>
+      </n-form-item>
+    </div>
 
-    <n-form-item class="modelSet" path="messageContextSize">
-      <template v-slot:label>
-        <span>{{ config.messageContextSize.label }}</span>
-        <Popover :text="config.messageContextSize.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          v-model:value="formData.messageContextSize"
-          v-bind="config.messageContextSize.attrs"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.messageContextSize"
-          @input="inputChange($event, 'messageContextSize')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <n-form-item class="modelSet" path="openaiRequestBody.maxTokens">
-      <template v-slot:label>
-        <span>{{ config.openaiRequestBody.maxTokens.label }}</span>
-        <Popover :text="config.openaiRequestBody.maxTokens.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          v-bind="config.openaiRequestBody.maxTokens.attrs"
-          v-model:value="formData.openaiRequestBody.maxTokens"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.openaiRequestBody.maxTokens"
-          @input="inputChange($event, 'openaiRequestBody.maxTokens')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <n-form-item class="modelSet" path="openaiRequestBody.temperature">
-      <template v-slot:label>
-        <span>{{ config.openaiRequestBody.temperature.label }}</span>
-        <Popover :text="config.openaiRequestBody.temperature.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          @update:value="temperatureUpdate"
-          v-bind="config.openaiRequestBody.temperature.attrs"
-          v-model:value="formData.openaiRequestBody.temperature"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.openaiRequestBody.temperature"
-          @input="inputChange($event, 'openaiRequestBody.temperature')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <n-form-item class="modelSet" path="openaiRequestBody.topP">
-      <template v-slot:label>
-        <span>{{ config.openaiRequestBody.topP.label }}</span>
-        <Popover :text="config.openaiRequestBody.topP.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          @update:value="topPUpdate"
-          v-bind="config.openaiRequestBody.topP.attrs"
-          v-model:value="formData.openaiRequestBody.topP"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.openaiRequestBody.topP"
-          @input="inputChange($event, 'openaiRequestBody.topP')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <n-form-item class="modelSet" path="openaiRequestBody.presencePenalty">
-      <template v-slot:label>
-        <span>{{ config.openaiRequestBody.presencePenalty.label }}</span>
-        <Popover :text="config.openaiRequestBody.presencePenalty.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          v-bind="config.openaiRequestBody.presencePenalty.attrs"
-          v-model:value="formData.openaiRequestBody.presencePenalty"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.openaiRequestBody.presencePenalty"
-          @input="inputChange($event, 'openaiRequestBody.presencePenalty')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <n-form-item class="modelSet" path="openaiRequestBody.frequencyPenalty">
-      <template v-slot:label>
-        <span>{{ config.openaiRequestBody.frequencyPenalty.label }}</span>
-        <Popover :text="config.openaiRequestBody.frequencyPenalty.popover" />
-      </template>
-      <div class="flex">
-        <n-slider
-          class="slider"
-          v-bind="config.openaiRequestBody.frequencyPenalty.attrs"
-          v-model:value="formData.openaiRequestBody.frequencyPenalty"
-        />
-        <n-input
-          class="input _input"
-          :value="formData.openaiRequestBody.frequencyPenalty"
-          @input="inputChange($event, 'openaiRequestBody.frequencyPenalty')"
-          placeholder=""
-        ></n-input>
-      </div>
-    </n-form-item>
-    <div class="diver">其他设置</div>
-    <n-form-item label="Prompt Template" path="contentPrompt">
+    <div class="diver" v-if="formData.friendType === 1">其他设置</div>
+    <n-form-item label="Prompt Template" path="contentPrompt" v-if="formData.friendType === 1">
       <div class="item_contet">
         <n-input
           class="_input"
@@ -229,6 +242,111 @@
         </div>
       </div>
     </n-form-item>
+    
+    <div class="diver" v-if="formData.friendType === 3">阿里云百炼设置</div>
+    <div v-if="formData.friendType === 3">
+      <n-form-item label="业务空间ID" path="aliyunDashscopeWorkspaceId" v-if="formData.friendSource === SourceType.created">
+        <div class="item_contet">
+          <n-input
+            class="_input"
+            v-model:value="formData.aliyunDashscopeWorkspaceId"
+            maxlength="128"
+            show-count
+            placeholder=""
+          />
+          <div class="desc">填写阿里云百炼空间ID</div>
+        </div>
+      </n-form-item>
+      <n-form-item label="应用ID" path="aliyunDashscopeAppId" v-if="formData.friendSource === SourceType.created">
+        <div class="item_contet">
+          <n-input
+            class="_input"
+            v-model:value="formData.aliyunDashscopeAppId"
+            maxlength="128"
+            show-count
+            placeholder=""
+          />
+          <div class="desc">填写阿里云百炼应用ID</div>
+        </div>
+      </n-form-item>
+      <n-form-item label="调用密钥" path="aliyunDashscopeApiKey" v-if="formData.friendSource === SourceType.created">
+        <div class="item_contet">
+          <n-input
+            class="_input"
+            v-model:value="formData.aliyunDashscopeApiKey"
+            maxlength="128"
+            show-count
+            placeholder=""
+          />
+          <div class="desc">填写阿里云百炼应用调用的密钥，如果不填则使用系统全局配置的。</div>
+        </div>
+      </n-form-item>
+    </div>
+
+    <div class="diver" v-if="formData.friendType === 4 || formData.friendType === 5">扣子设置</div>
+    <div v-if="formData.friendType === 4 || formData.friendType === 5">
+      <n-form-item label="BotID" path="cozeBotId" v-if="formData.friendSource === SourceType.created">
+        <div class="item_contet">
+          <n-input
+            class="_input"
+            v-model:value="formData.cozeBotId"
+            maxlength="128"
+            show-count
+            placeholder=""
+          />
+          <div class="desc">填写扣子工作空间的智能体ID</div>
+        </div>
+      </n-form-item>
+      <n-form-item label="访问令牌" path="cozeAccessToken" v-if="formData.friendSource === SourceType.created">
+        <div class="item_contet">
+          <n-input
+            class="_input"
+            v-model:value="formData.cozeAccessToken"
+            maxlength="128"
+            show-count
+            placeholder=""
+          />
+          <div class="desc">填写扣子授权页面的访问令牌，如果不填则使用系统全局配置的。</div>
+        </div>
+      </n-form-item>
+    </div>
+
+    <div v-if="formData.friendType === 3 || formData.friendType === 4 || formData.friendType === 5">
+      <n-form-item label="自定义变量" path="variables">
+        <div class="item_contet">
+          <div class="rowInput" v-for="(variable, i) in variableList" :key="variable">
+            <n-input
+              :key="i"
+              v-model:value="variable.name"
+              @input="variableChange($event, i)"
+              class="_input variable_name"
+              maxlength="50"
+              show-count
+              placeholder="变量名"
+            />
+            <n-input
+              :key="i"
+              type="textarea"
+              v-model:value="variable.value"
+              @input="variableChange($event, i)"
+              class="_input variable_value"
+              rows="1"
+              maxlength="1000"
+              show-count
+              placeholder="变量值"
+            />
+            <div class="close">
+              <n-button class="_close_btn" @click="closeVariable(i)">
+                <span class="iconfont icon-close"> </span>
+              </n-button>
+            </div>
+          </div>
+          <n-button class="_close_btn _add_var_btn" @click="addVariable" v-if="variableList.length < 10">
+            添加一个变量
+          </n-button>
+        </div>
+      </n-form-item>
+    </div>
     <n-form-item>
       <div class="footer flex">
         <n-button class="_close_btn" @click="close">取消</n-button>
@@ -270,7 +388,73 @@ const props = defineProps(["tags"]);
 const emit = defineEmits(["confirm", "close"]);
 const openUrl = window.__talkx__.openUrl;
 
+// 类型选项
+const friendTypeOptions = [
+  { label: "简单对话", value: 1 },
+  { label: "GPTs (已过时)", value: 2, disabled: true },
+  { label: "阿里云百炼应用", value: 3 },
+  { label: "扣子（🇨🇳 中国）", value: 4 },
+  { label: "扣子（🌏 全球）", value: 5 },
+];
+
 const stars = ref([{ text: "" }]);
+const variableList = ref([{  }]);
+
+// 初始化variables数据
+const initVariables = () => {
+  try {
+    const vars = JSON.parse(formData.value.variables || "{}");
+    variableList.value = Object.entries(vars).map(([name, value]) => ({ name, value })) || [];
+  } catch (e) {
+    console.error('解析variables失败:', e);
+    variableList.value = [];
+  }
+};
+
+// 监听formData变化，初始化variables
+watch(() => formData.value.variables, initVariables, { immediate: true });
+
+// 监听friendType变化，当从3变为其他值时，清空阿里云相关字段
+// watch(
+//   () => formData.value.friendType,
+//   (newVal, oldVal) => {
+//     if (oldVal === 3 && newVal !== 3) {
+//       formData.value.aliyunDashscopeWorkspaceId = "";
+//       formData.value.aliyunDashscopeAppId = "";
+//       formData.value.aliyunDashscopeApiKey = "";
+//     }
+//   }
+// );
+
+const variableChange = (value, index) => {
+};
+
+const closeVariable = (i) => {
+  console.log("closeVariable", i);
+  variableList.value.splice(i, 1);
+};
+
+const addVariable = () => {
+  if (variableList.value.length >= 10) {
+    message.warning("最多添加10个变量");
+    return;
+  }
+  variableList.value.push({ name: "", value: "" });
+};
+
+// 在提交时处理变量数据转换
+
+const updateVariables = () => {
+  try {
+    const variables = JSON.parse(formData.value.variables || "[]");
+    variableList.value = Object.entries(variables).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  } catch (error) {
+    variableList.value = [];
+  }
+};
 
 const cStartChange = (e, i) => {
   const len = stars.value.length;
@@ -347,6 +531,15 @@ const confirm = async () => {
   if (!formRef.value || isClick) return;
   isClick = true;
 
+  // 处理变量数据转换
+  if (Array.isArray(variableList.value)) {
+    const validVariables = variableList.value
+      .filter(item => item && typeof item === 'object' && item.name && item.value)
+      .filter(({ name, value }) => name.trim() && value.trim())
+      .map(({ name, value }) => [name.trim(), value.trim()]);
+    formData.value.variables = JSON.stringify(Object.fromEntries(validVariables));
+  }
+
   const errors = await new Promise((c) => formRef.value.validate(c));
   if (errors) {
     return over();
@@ -354,7 +547,10 @@ const confirm = async () => {
   emit("confirm", over);
 };
 
-onMounted(() => update());
+onMounted(() => {
+  update();
+  updateVariables();
+});
 defineExpose({ update });
 </script>
 
@@ -398,6 +594,18 @@ defineExpose({ update });
       ._close_btn {
         width: 40px;
       }
+      .variable_name {
+        width: 200px;
+        margin-right: 10px;
+      }
+      .variable_value {
+        flex: 1;
+        margin-right: 10px;
+      }
+    }
+
+    ._add_var_btn {
+      margin-top: 10px;
     }
   }
 
